@@ -25,7 +25,7 @@ class serverThread(threading.Thread):
         self.isConnected = True
     
     def run(self):
-        
+
         self.isConnected = True
         #Welcome Message
         resp = '220 Welcome!'
@@ -54,6 +54,10 @@ class serverThread(threading.Thread):
     
     def notLoggedInMSG(self):
         res = '530 Please login with USER and PASS.'
+        self.sendReply(res)
+
+    def paramError(self,cmd):
+        res = '501 \'' + cmd[:-2] + '\': parameter not understood.' 
         self.sendReply(res)
     
     def resetState(self):
@@ -141,12 +145,25 @@ class serverThread(threading.Thread):
         self.sendReply(resp)
     
     def TYPE(self,cmd):
-        self.mode = cmd[5]
-        resp = '200 Binary mode.'
-        self.sendReply(resp)
-    
+        
+        #ASCII or Binary Mode
+        mode = cmd[5]
+        
+        #Confirm I or A
+        if mode.upper() == 'I':
+            self.mode = mode
+            resp = '200 Binary mode.'
+            self.sendReply(resp)
+        elif mode.upper() == 'A':
+            self.mode = mode
+            resp = '200 ASCII mode.'
+            self.sendReply(resp)
+        else:
+            #Unknown parameter
+            self.paramError(cmd)
+
     def PWD(self,cmd):
-        cwd = os.path.realpath(self.cwd,self.baseWD)
+        cwd = os.path.relpath(self.cwd,self.baseWD)
         if cwd == '.':
             cwd='/'
         else:
