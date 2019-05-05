@@ -1,60 +1,85 @@
-# client.py
-""" import socket
-
-s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-host = '10.196.51.12' # Or preferably 'localhost' # my IP address 10.196.6.30 
-port = 60000
-
-s.connect((host, port))
-
-wm = 'Hello Server!' #Welcome Message
-s.send(wm.encode())
-
-with open('received_file.txt', 'wb') as f:
-    print('file opened')
-    while True:
-        print('receiving data...')
-        data = s.recv(1024)
-        print(data)
-        if not data:
-            break
-        f.write(data)
-
-f.close()
-print('succesfully get the file')
-s.close()
-print('connection closed') """
+#client.py
 
 import socket
-import os
+import math
+import sys
+import time
 
-def send(sock,msg):
-    print('--> Sending: ' + msg)
-    sock.send(msg + '\r\n')
-    reply = sock.recv(1024)
-    print('<-- Reply: ' + reply )
-    return reply
+class FTPclient:
+    def __init__(self, serverIPname, serverIPport):
 
-serverPIname = 'localhost'#'127.0.1.1'# 'localhost' #'test.rebex.net'#'speedtest.tele2.net'#'ftp.swfwmd.state.fl.us' #'localhost'
-serverPIport =  12000
+        self.IPsocket = None
+        self.DTPsocket = None
+        self.errorResp = False
+        self.alive = False
+        self.loggedIn = False
+        self.user = None
+        self.serverIPname = serverIPname
+        self.serverIPport = serverIPport
+        
+    def initConnection(self):
 
-clientSocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-clientSocket.connect((serverPIname,serverPIport))
+        self.IPsocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
-condition220 = True
-message = clientSocket.recv(2048).decode()
-print(message)
+        try:
 
-""" while condition220:
-    message = clientSocket.recv(2048)
-    print(message)
-    condition220 = message[0:3] != '220' """
+            self.IPsocket.connect((self.serverIPname,self.serverIPport))
+            self.getServerReply()
+            
+        except:
+
+            errMSG = 'Failed to connect ' + self.serverIPname
+            print(errMSG)
+            self.errorResp = True
+            time.sleep(3)
+            return
+
+        self.alive = True
+        print('Connected to server :)')
     
+    def login(self, userName, password):
+        
+        # enter username
+        cmd = 'USER ' + userName
+        self.send(cmd)
+        
+        if not self.errorResp:
+            # enter password
+            cmd = 'PASS ' + password
+            self.send(cmd)
 
-while True:   
-    command = input('--> ')
-    clientSocket.send((command+'\r\n').encode())
-    reply = clientSocket.recv(1024).decode()
-    print(reply)
+            if not self.errorResp:
+                self.loggedIn = True
+                self.user = userName
+                print('Login Success')
 
-clientSocket.close()
+                
+    def send(self, cmd):
+        
+        self.IPsocket.send((cmd + '\r\n').encode())
+        self.getServerReply()
+
+    def getServerReply(self):
+
+        resp = self.IPsocket.recv(1024).decode()
+        
+        # Notify if this an error
+        if resp[0] != '5' and resp[0] != '4':
+            self.errorResp = False
+            print(resp[0])
+        else:
+            self.errorResp = True
+        print('Server: ', resp)
+
+            
+def Main():
+    
+    serverIP = 12000
+    serverName = 'localhost'
+    userName = 'Elias'
+    password = 'aswedeal'
+    client = FTPclient(serverName,serverIP)
+    client.initConnection()
+    client.login(userName, password)
+    
+Main()
