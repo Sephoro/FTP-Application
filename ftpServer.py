@@ -42,13 +42,22 @@ class serverThread(threading.Thread):
    
     def sendReply(self,reply):
         self.conn.send((reply + '\r\n').encode())
+    
+    def notLoggedInMSG(self):
+        res = '530 Please login with USER and PASS.'
+        self.sendReply(res)
 
     def SYST(self,cmd):
         resp = '215 UNIX Type: L8.'
         self.sendReply(resp)
     
     def USER(self,cmd):
-        
+
+        #RESET STATE, Incase someone logs in while the other is still logged in
+        self.isLoggedIn = False
+        self.validUser = False
+        self.user = None
+
         # Extract username in the command
         self.user = cmd[5:-2]
         
@@ -69,9 +78,27 @@ class serverThread(threading.Thread):
             self.validUser = False
     
     def PASS(self,cmd):
-        #TODO
-        resp = '230 User logged in, proceed.'
-        self.sendReply(resp) 
+        
+        #Check if user name is entered
+        if self.validUser:
+            password = cmd[5:-2]
+            pws = open(self.users, 'r').read()
+
+            #Check if password matches user
+            for p in pws.split('\n'):
+
+                if len(p.split(' ')[0]) != 0:
+                    if password == p.split(' ')[1] and self.user == p.split(' ')[0]:
+                        self.isLoggedIn = True
+                        resp = '230 User logged in, proceed.'
+                        self.sendReply(resp)
+                        break
+
+            if not self.isLoggedIn:
+                resp = '530 Invalid password for '  + self.user
+                self.sendReply(resp)
+        else:
+            self.notLoggedInMSG()
     
     def QUIT(self,cmd):
         #TODO
@@ -112,48 +139,58 @@ class serverThread(threading.Thread):
         self.sendReply(resp)
 
     def PASV(self,cmd):
+        #Cant't try to establish connection without logging in
+        if self.isLoggedIn:
+            self.PASVmode = True
 
-        self.PASVmode = True
+            self.serverSocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+            self.serverSocket.bind((serverIP,0))
+            self.serverSocket.listen(1)
 
-        self.serverSocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        self.serverSocket.bind((serverIP,0))
-        self.serverSocket.listen(1)
+            ip, port = self.serverSocket.getsockname()
+        
+            #Condition IP with the RFC959 standard
+            ip = ip.split('.')
+            ip = ','.join(ip)
+        
+            #Condition the port with the RFC959 standard
+            p1 = math.floor(port/256)
+            p2 = port%256
+            print('open...\nIP: ' + str(ip) +'\nPORT: '+ str(port))
+        
+            #Prepare the connection settings for take-off
+            resp = '227 Entering Passive Mode (' + str(ip) + ',' + str(p1) + ',' +str(p2) + ').'
+            self.sendReply(resp)
 
-        ip, port = self.serverSocket.getsockname()
-        
-        #Condition IP with the RFC959 standard
-        ip = ip.split('.')
-        ip = ','.join(ip)
-        
-        #Condition the port with the RFC959 standard
-        p1 = math.floor(port/256)
-        p2 = port%256
-        print('open...\nIP: ' + str(ip) +'\nPORT: '+ str(port))
-        
-        #Prepare the connection settings for take-off
-        resp = '227 Entering Passive Mode (' + str(ip) + ',' + str(p1) + ',' +str(p2) + ').'
-        self.sendReply(resp)
+        else:
+            self.notLoggedInMSG()
 
     def PORT(self,cmd):
-
-        #check if Passive Mode
-        if self.PASVmode:
-            self.serverSocket.close()
-            self.PASVmode = False
-
-        #split the connection settings
-        conSettings = cmd[5:].split(',')
         
-        #Generate the IP address from the connection settings 
-        self.DTPaddr = '.'.join(conSettings[:4])
+        #Cant't try to establish connection without logging in
+        if self.isLoggedIn:
+    
+            #check if Passive Mode
+            if self.PASVmode:
+                self.serverSocket.close()
+                self.PASVmode = False
 
-        #Generate the PORT from the connection settings
-        #This is with respect to RFC959
-        self.DTPport = ((int(conSettings[4])<<8)) + int(conSettings[5])
+            #split the connection settings
+            conSettings = cmd[5:].split(',')
         
-        #Acknowledge
-        resp = '200 Get port.'
-        self.sendReply(resp)
+            #Generate the IP address from the connection settings 
+            self.DTPaddr = '.'.join(conSettings[:4])
+
+            #Generate the PORT from the connection settings
+            #This is with respect to RFC959
+            self.DTPport = ((int(conSettings[4])<<8)) + int(conSettings[5])
+        
+            #Acknowledge
+            resp = '200 Get port.'
+            self.sendReply(resp)
+
+        else:
+            self.notLoggedInMSG()
 
     def startDTPsocket(self):
         
