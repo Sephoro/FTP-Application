@@ -22,14 +22,21 @@ class serverThread(threading.Thread):
         self.isLoggedIn = False
         self.users = usersDB
         self.validUser = False
+        self.isConnected = True
     
     def run(self):
+        
+        self.isConnected = True
+        #Welcome Message
         resp = '220 Welcome!'
         self.sendReply(resp)
-        while True:
-            cmd = self.conn.recv(256).decode()
 
-            if not cmd: break
+        #Await for connection from clients
+        while True:
+            
+            cmd = self.conn.recv(256).decode()
+            
+            if not cmd or not self.isConnected : break
             else:
                 print('Recieved: ', cmd)
                 try:
@@ -39,6 +46,8 @@ class serverThread(threading.Thread):
                     print('Error: ', err)
                     resp = '500 Syntax error, command unrecognized.'
                     self.sendReply(resp)
+        
+        self.conn.close()
    
     def sendReply(self,reply):
         self.conn.send((reply + '\r\n').encode())
@@ -46,17 +55,23 @@ class serverThread(threading.Thread):
     def notLoggedInMSG(self):
         res = '530 Please login with USER and PASS.'
         self.sendReply(res)
+    
+    def resetState(self):
+         
+        #RESET STATE of affairs
+        self.isLoggedIn = False
+        self.validUser = False
+        self.user = None
+
 
     def SYST(self,cmd):
         resp = '215 UNIX Type: L8.'
         self.sendReply(resp)
     
     def USER(self,cmd):
-
+        
         #RESET STATE, Incase someone logs in while the other is still logged in
-        self.isLoggedIn = False
-        self.validUser = False
-        self.user = None
+        self.resetState()
 
         # Extract username in the command
         self.user = cmd[5:-2]
@@ -101,10 +116,21 @@ class serverThread(threading.Thread):
             self.notLoggedInMSG()
     
     def QUIT(self,cmd):
-        #TODO
-        resp = '221 Service closing control connection'
-        # or resp = '221 Logged out'
-        self.sendReply(resp)
+
+        #If the user is logged in, they are logged out
+        if self.isLoggedIn:
+
+            self.resetState()
+            resp = '221 Logged out'
+            self.sendReply(resp)
+    
+        else:
+
+            resp = '221 Service closing control connection'
+            self.sendReply(resp)
+            self.isConnected = False
+            #self.conn.close()
+
     def STRU(self,cmd):
         #TODO
         resp = '200 F.'
