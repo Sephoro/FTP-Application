@@ -7,11 +7,11 @@ import math
 
 serverPort = 12000
 serverIP = 'localhost' #socket.gethostbyname(socket.gethostname())
-currDir = os.path.abspath('.')
+
 allow_delete = False
 
 class serverThread(threading.Thread):
-    def __init__(self, conn, addr,usersDB):
+    def __init__(self, conn, addr,usersDB, currDir):
         threading.Thread.__init__(self)
         self.conn = conn
         self.addr = addr
@@ -27,11 +27,11 @@ class serverThread(threading.Thread):
     def run(self):
 
         self.isConnected = True
-        #Welcome Message
+        # Welcome Message
         resp = '220 Welcome!'
         self.sendReply(resp)
 
-        #Await for connection from clients
+        # Await for connection from clients
         while True:
             
             cmd = self.conn.recv(256).decode()
@@ -62,7 +62,7 @@ class serverThread(threading.Thread):
     
     def resetState(self):
          
-        #RESET STATE of affairs
+        # RESET STATE of affairs
         self.isLoggedIn = False
         self.validUser = False
         self.user = None
@@ -80,10 +80,10 @@ class serverThread(threading.Thread):
         # Extract username in the command
         self.user = cmd[5:-2]
         
-        #Read users file
+        # Read users file
         users = open(self.users, 'r').read()
         
-        #Check if user exists on the database
+        # Check if user exists on the database
         for u in users.split('\n'):
             if self.user == u.split(' ')[0] and len(u.split(' ')[0]) != 0:
                 self.validUser = True
@@ -98,12 +98,12 @@ class serverThread(threading.Thread):
     
     def PASS(self,cmd):
         
-        #Check if user name is entered
+        # Check if user name is entered
         if self.validUser:
             password = cmd[5:-2]
             pws = open(self.users, 'r').read()
 
-            #Check if password matches user
+            # Check if password matches user
             for p in pws.split('\n'):
 
                 if len(p.split(' ')[0]) != 0:
@@ -121,7 +121,7 @@ class serverThread(threading.Thread):
     
     def QUIT(self,cmd):
 
-        #If the user is logged in, they are logged out
+        # If the user is logged in, they are logged out
         if self.isLoggedIn:
 
             self.resetState()
@@ -133,7 +133,7 @@ class serverThread(threading.Thread):
             resp = '221 Service closing control connection'
             self.sendReply(resp)
             self.isConnected = False
-            #self.conn.close()
+        
 
     def STRU(self,cmd):
         #TODO
@@ -146,10 +146,10 @@ class serverThread(threading.Thread):
     
     def TYPE(self,cmd):
         
-        #ASCII or Binary Mode
+        # ASCII or Binary Mode
         mode = cmd[5]
         
-        #Confirm I or A
+        # Confirm I or A
         if mode.upper() == 'I':
             self.mode = mode
             resp = '200 Binary mode.'
@@ -159,30 +159,59 @@ class serverThread(threading.Thread):
             resp = '200 ASCII mode.'
             self.sendReply(resp)
         else:
-            #Unknown parameter
+            # Unknown parameter
             self.paramError(cmd)
 
     def PWD(self,cmd):
-        cwd = os.path.relpath(self.cwd,self.baseWD)
-        if cwd == '.':
-            cwd='/'
-        else:
-            cwd='/'+cwd
-            resp = '257' + cwd
+        
+        # Cant't print working directory if not looged in
+        if self.isLoggedIn:
+            
+            # The path relative to the root
+            tempDir = '/' + self.cwd
+            print(tempDir)
+            cwd = os.path.relpath(tempDir,'/')
+            cwd = '/' + cwd 
+
+            resp = '257' + ' "' + cwd + '" is the current dir.'
             self.sendReply(resp)
-    def CWD(self,cmd):
-        chwd=cmd[4:-2]
-        if chwd=='.':
-            self.cwd=self.baseWD
-        elif chwd[0]=='/':
-            self.cwd=os.path.join(self.baseWD, chwd[1:])
+
         else:
-            self.cwd = os.path.join(self.baseWD, chwd)
-        resp = '250 OK.'
-        self.sendReply(resp)
+            self.notLoggedInMSG()
+
+    def CWD(self,cmd):
+
+        if self.isLoggedIn: 
+            # Get the directory
+            chwd = cmd[4:-2]
+         
+            # Base directory?
+            if chwd == '.' or chwd == '/':
+                self.cwd = self.baseWD
+                resp = '250 OK.'
+                self.sendReply(resp)
+            else:
+            
+                # Consider /dir or dir
+                if chwd[0] == '/':
+                    chwd = chwd[1:]
+
+                tempCwd = os.path.join(self.cwd, chwd)
+            
+                # Does the path exist?
+                if os.path.exists(tempCwd):
+                    self.cwd = tempCwd
+                    resp = '250 OK.'
+                    self.sendReply(resp)
+                else:
+                    resp = '550 The system cannot find the file specified.'
+                    self.sendReply(resp)
+           
+        else:
+            self.notLoggedInMSG()
 
     def PASV(self,cmd):
-        #Cant't try to establish connection without logging in
+        # Cant't try to establish connection without logging in
         if self.isLoggedIn:
             self.PASVmode = True
 
@@ -192,16 +221,16 @@ class serverThread(threading.Thread):
 
             ip, port = self.serverSocket.getsockname()
         
-            #Condition IP with the RFC959 standard
+            # Condition IP with the RFC959 standard
             ip = ip.split('.')
             ip = ','.join(ip)
         
-            #Condition the port with the RFC959 standard
+            # Condition the port with the RFC959 standard
             p1 = math.floor(port/256)
             p2 = port%256
             print('open...\nIP: ' + str(ip) +'\nPORT: '+ str(port))
         
-            #Prepare the connection settings for take-off
+            # Prepare the connection settings for take-off
             resp = '227 Entering Passive Mode (' + str(ip) + ',' + str(p1) + ',' +str(p2) + ').'
             self.sendReply(resp)
 
@@ -210,26 +239,26 @@ class serverThread(threading.Thread):
 
     def PORT(self,cmd):
         
-        #Cant't try to establish connection without logging in
+        # Cant't try to establish connection without logging in
         if self.isLoggedIn:
     
-            #check if Passive Mode
+            # check if Passive Mode
             if self.PASVmode:
                 self.serverSocket.close()
                 self.PASVmode = False
 
-            #split the connection settings
+            # Split the connection settings
             conSettings = cmd[5:].split(',')
         
-            #Generate the IP address from the connection settings 
+            # Generate the IP address from the connection settings 
             self.DTPaddr = '.'.join(conSettings[:4])
 
-            #Generate the PORT from the connection settings
-            #This is with respect to RFC959
+            # Generate the PORT from the connection settings
+            # This is with respect to RFC959
             self.DTPport = ((int(conSettings[4])<<8)) + int(conSettings[5])
         
-            #Acknowledge
-            resp = '200 Get port.'
+            # Acknowledge
+            resp = '200 Got it.'
             self.sendReply(resp)
 
         else:
@@ -352,17 +381,18 @@ class serverThread(threading.Thread):
         self.sendReply(resp)
         
 class FTPserver(threading.Thread):
-    def __init__(self,usersDB):
+    def __init__(self,usersDB,homeDir):
         self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.sock.bind((serverIP, serverPort))
         self.usersDB = usersDB
+        self.homeDir = homeDir
         threading.Thread.__init__(self)
     
     def run(self):
         self.sock.listen(5)
         while True:
             connectionSocket, addr = self.sock.accept()
-            thread = serverThread(connectionSocket, addr,self.usersDB)
+            thread = serverThread(connectionSocket, addr,self.usersDB, self.homeDir)
             thread.daemon = True
             thread.start()
     
@@ -371,7 +401,8 @@ class FTPserver(threading.Thread):
 
 #if __name__ == '__main___':'
 users = './users.txt'
-cThread = FTPserver(users)
+homeDir = 'HOME'
+cThread = FTPserver(users,homeDir)
 cThread.daemon = True
 cThread.start()
 print('On', serverIP, ':', serverPort)
