@@ -35,8 +35,8 @@ def send(sock,msg):
     print('<-- Reply: ' + reply )
     return reply
 
-serverPIname = 'test.rebex.net'#'127.0.1.1'# 'localhost' #'test.rebex.net'#'speedtest.tele2.net'#'ftp.swfwmd.state.fl.us' #'localhost'
-serverPIport =  21
+serverPIname = 'localhost'#'127.0.1.1'# 'localhost' #'test.rebex.net'#'speedtest.tele2.net'#'ftp.swfwmd.state.fl.us' #'localhost'
+serverPIport =  12000
 
 clientSocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 clientSocket.connect((serverPIname,serverPIport))

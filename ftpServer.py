@@ -11,7 +11,7 @@ currDir = os.path.abspath('.')
 allow_delete = False
 
 class serverThread(threading.Thread):
-    def __init__(self, conn, addr):
+    def __init__(self, conn, addr,usersDB):
         threading.Thread.__init__(self)
         self.conn = conn
         self.addr = addr
@@ -19,6 +19,9 @@ class serverThread(threading.Thread):
         self.cwd = self.baseWD
         self.rest = False
         self.PASVmode = False
+        self.isLoggedIn = False
+        self.users = usersDB
+        self.validUser = False
     
     def run(self):
         resp = '220 Welcome!'
@@ -45,9 +48,25 @@ class serverThread(threading.Thread):
         self.sendReply(resp)
     
     def USER(self,cmd):
-        #TODO
-        resp = '331 User name okay, need password.'
-        self.sendReply(resp)
+        
+        # Extract username in the command
+        self.user = cmd[5:-2]
+        
+        #Read users file
+        users = open(self.users, 'r').read()
+        
+        #Check if user exists on the database
+        for u in users.split('\n'):
+            if self.user == u.split(' ')[0] and len(u.split(' ')[0]) != 0:
+                self.validUser = True
+                resp = '331 User name okay, need password.'
+                self.sendReply(resp)
+                break
+                
+        if not self.validUser:    
+            resp = '530 Invalid User.'
+            self.sendReply(resp)
+            self.validUser = False
     
     def PASS(self,cmd):
         #TODO
@@ -95,6 +114,7 @@ class serverThread(threading.Thread):
     def PASV(self,cmd):
 
         self.PASVmode = True
+
         self.serverSocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.serverSocket.bind((serverIP,0))
         self.serverSocket.listen(1)
@@ -109,28 +129,46 @@ class serverThread(threading.Thread):
         p1 = math.floor(port/256)
         p2 = port%256
         print('open...\nIP: ' + str(ip) +'\nPORT: '+ str(port))
+        
         #Prepare the connection settings for take-off
         resp = '227 Entering Passive Mode (' + str(ip) + ',' + str(p1) + ',' +str(p2) + ').'
         self.sendReply(resp)
 
     def PORT(self,cmd):
+
+        #check if Passive Mode
         if self.PASVmode:
             self.serverSocket.close()
             self.PASVmode = False
-        parts = cmd[5:].split(',')
+
+        #split the connection settings
+        conSettings = cmd[5:].split(',')
         
-        self.DTPaddr = '.'.join(parts[:4])
-        self.DTPport = ((int(parts[4])<<8)) + int(parts[5])
+        #Generate the IP address from the connection settings 
+        self.DTPaddr = '.'.join(conSettings[:4])
+
+        #Generate the PORT from the connection settings
+        #This is with respect to RFC959
+        self.DTPport = ((int(conSettings[4])<<8)) + int(conSettings[5])
+        
+        #Acknowledge
         resp = '200 Get port.'
         self.sendReply(resp)
 
     def startDTPsocket(self):
-        if self.PASVmode:
-            self.DTPsocket, addr = self.serverSocket.accept()
-            print('connect: ', addr)
-        else:
-            self.DTPsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.DTPsocket.connect((self.DTPaddr,self.DTPport))
+        
+        try:
+            if self.PASVmode:
+                self.DTPsocket, addr = self.serverSocket.accept()
+                print('connect: ', addr)
+            else:
+                self.DTPsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.DTPsocket.connect((self.DTPaddr,self.DTPport))
+            resp = ' 225 Data Connection open'
+            self.sendReply(resp)
+        except socket.error:
+            resp = '425 Cannot open Data Connection'
+            self.sendReply(resp)
 
     def stopDTPsocket(self):
         self.DTPsocket.close()
@@ -234,24 +272,26 @@ class serverThread(threading.Thread):
         self.sendReply(resp)
         
 class FTPserver(threading.Thread):
-    def __init__(self):
+    def __init__(self,usersDB):
         self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.sock.bind((serverIP, serverPort))
+        self.usersDB = usersDB
         threading.Thread.__init__(self)
     
     def run(self):
         self.sock.listen(5)
         while True:
             connectionSocket, addr = self.sock.accept()
-            thread = serverThread(connectionSocket, addr)
+            thread = serverThread(connectionSocket, addr,self.usersDB)
             thread.daemon = True
             thread.start()
     
     def stop(self):
         self.sock.close()
 
-#if __name__ == '__main___':
-cThread = FTPserver()
+#if __name__ == '__main___':'
+users = './users.txt'
+cThread = FTPserver(users)
 cThread.daemon = True
 cThread.start()
 print('On', serverIP, ':', serverPort)
