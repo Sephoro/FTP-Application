@@ -24,7 +24,7 @@ class FTPclient:
         try:
 
             self.IPsocket.connect((self.serverIPname,self.serverIPport))
-            self.getServerReply()
+            print(self.IPsocket.recv(1024).decode())
             
         except:
 
@@ -42,36 +42,69 @@ class FTPclient:
         # enter username
         cmd = 'USER ' + userName
         self.send(cmd)
+        self.printServerReply(self.getServerReply())
         
         if not self.errorResp:
             # enter password
             cmd = 'PASS ' + password
             self.send(cmd)
+            self.printServerReply(self.getServerReply())
 
             if not self.errorResp:
                 self.loggedIn = True
                 self.user = userName
-                print('Login Success')
+                print('Login Success\n')
 
                 
     def send(self, cmd):
-        
+
         self.IPsocket.send((cmd + '\r\n').encode())
-        self.getServerReply()
+        print('Client: ', cmd)
 
     def getServerReply(self):
-
+        
         resp = self.IPsocket.recv(1024).decode()
         
         # Notify if this an error
         if resp[0] != '5' and resp[0] != '4':
             self.errorResp = False
-            print(resp[0])
         else:
             self.errorResp = True
-        print('Server: ', resp)
+        return resp
+    
+    def printServerReply(self,resp):
+        print('Server :', resp)
 
+    def startPassiveDTPconnection(self):
+
+        cmd = 'PASV'
+        self.send(cmd)
+        resp = self.getServerReply()
+        self.printServerReply(resp)
+
+        if not self.errorResp:
             
+            firstIndex = resp.find('(')
+            endIndex  = resp.find(')')
+
+            addr = resp[firstIndex+1:endIndex].split(',')
+            self.serverDTPname = '.'.join(addr[:-2])
+            self.serverDTPport = (int(addr[4])<<8) + int(addr[5])
+            print(self.serverDTPname,self.serverDTPport)
+            try:
+
+                self.DTPsocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+                self.DTPsocket.connect((self.serverDTPname,self.serverDTPport))
+                print('Passive Connection Success, Ready to receive\n')
+                self.dataConnectionAlive = True
+
+            except:
+
+                print('Failed to connect to ', self.serverDTPname)
+                self.dataConnectionAlive = False
+                time.sleep(3)
+                return
+
 def Main():
     
     serverIP = 12000
@@ -81,5 +114,6 @@ def Main():
     client = FTPclient(serverName,serverIP)
     client.initConnection()
     client.login(userName, password)
+    client.startPassiveDTPconnection()
     
 Main()
