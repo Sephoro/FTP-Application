@@ -23,6 +23,7 @@ class serverThread(threading.Thread):
         self.users = usersDB
         self.validUser = False
         self.isConnected = True
+        self.islist = False
     
     def run(self):
 
@@ -144,7 +145,7 @@ class serverThread(threading.Thread):
         self.sendReply(resp)
     
     def TYPE(self,cmd):
-        
+
         # ASCII or Binary Mode
         mode = cmd[5]
         
@@ -281,21 +282,29 @@ class serverThread(threading.Thread):
             self.sendReply(resp)
 
     def stopDTPsocket(self):
+        
         self.DTPsocket.close()
         if self.PASVmode:
             self.serverSocket.close()
     
     def sendData(self, data):
-        self.DTPsocket.send((data+'\r\n').encode())
+
+        if not self.islist and self.mode == 'I':
+            self.DTPsocket.send((data))   
+        else:
+            self.DTPsocket.send((data+'\r').encode())
 
     def LIST(self,cmd):
+
         resp = '150 File status okay; about to open data connection.'
         self.sendReply(resp)
         print('list: ', self.cwd)
         self.startDTPsocket()
         for l in os.listdir(self.cwd):
             ll = self.toList(os.path.join(self.cwd,l))
+            self.islist = True
             self.sendData(ll)
+            self.islist = False
         self.stopDTPsocket()
         resp = '200 Listing completed.'
         self.sendReply(resp)
@@ -360,29 +369,49 @@ class serverThread(threading.Thread):
         self.sendReply(resp)
 
     def RETR(self,cmd):
-        fileName = os.path.join(self.cwd, cmd[5:-2])
-        print('Downloading :', fileName)
 
-        if self.mode == 'I':
-            rFile = open(fileName, 'rb')
+        # Cant retrieve files if not logged in
+        if self.isLoggedIn:
+         
+            fileName = os.path.join(self.cwd, cmd[5:-2])
+        
+            # Check if file exist
+            if os.path.exists(fileName):
+                print('Downloading :', fileName)
+             
+                 # Mode?
+                if self.mode == 'I':
+                    rFile = open(fileName, 'rb')
+                else:
+                    rFile = open(fileName, 'r')
+                    
+             
+                # Open data connection
+                resp = '150 Opening file data connection.'
+                self.sendReply(resp)
+
+                if self.rest:
+                    rFile.seek(self.pos)
+                    self.rest = False
+        
+                data = rFile.read(1024)
+
+                self.startDTPsocket()
+                # Send the file
+                while data:
+                    self.sendData(data)
+                    data = rFile.read(1024)
+                rFile.close()
+                self.stopDTPsocket()
+                resp = '226 Transfer complete.'
+                self.sendReply(resp)
+            else:
+                # File does not exist
+                resp = '550 The system cannot find the file specified.'
+                self.sendReply(resp)
         else:
-            rFile = open(fileName, 'r')
-        
-        resp = '150 Opening data connection.'
-        self.sendReply(resp)
-        if self.rest:
-            rFile.seek(self.pos)
-            self.rest = False
-        
-        data = rFile.read(1024)
-        self.startDTPsocket()
-        while data:
-            self.sendData(data)
-            data = rFile.read(1024)
-        rFile.close()
-        self.stopDTPsocket()
-        resp = '226 Transfer complete.'
-        self.sendReply(resp)
+            self.notLoggedInMSG()
+
         
 class FTPserver(threading.Thread):
     def __init__(self,usersDB,homeDir):
