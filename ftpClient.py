@@ -76,7 +76,8 @@ class FTPclient:
         print('Server :', resp)
 
     def startPassiveDTPconnection(self):
-
+        
+        #Ask for a passive connection
         cmd = 'PASV'
         self.send(cmd)
         resp = self.getServerReply()
@@ -86,13 +87,15 @@ class FTPclient:
             
             firstIndex = resp.find('(')
             endIndex  = resp.find(')')
-
+            
+            # Obtain the server DTP address and Port
             addr = resp[firstIndex+1:endIndex].split(',')
             self.serverDTPname = '.'.join(addr[:-2])
             self.serverDTPport = (int(addr[4])<<8) + int(addr[5])
             print(self.serverDTPname,self.serverDTPport)
-            try:
 
+            try:
+                #Connect to the server DTP
                 self.DTPsocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
                 self.DTPsocket.connect((self.serverDTPname,self.serverDTPport))
                 print('Passive Connection Success, Ready to receive\n')
@@ -104,16 +107,47 @@ class FTPclient:
                 self.dataConnectionAlive = False
                 time.sleep(3)
                 return
+    
+    def getList(self):
+         
+        # Cant't get list if disconnected
+        if self.dataConnectionAlive and self.alive:
+
+            cmd = 'LIST'
+            self.send(cmd)
+            self.printServerReply(self.getServerReply)
+
+            print('\nReceiving Data\n')
+
+            while True:
+                # Get the directory list
+                data = self.DTPsocket.recv(1024)
+                print(data.decode())
+
+                if not data:
+                    break
+           
+            print('Downloading done\n')
+            self.printServerReply(self.getServerReply)
+
 
 def Main():
     
-    serverIP = 12000
-    serverName = 'localhost'
-    userName = 'Elias'
-    password = 'aswedeal'
+    # Testing ftp servers
+    Po = [21,12000,21,21,12005]
+    S  = ['speedtest.tele2.net', 'localhost','test.rebex.net','dlptest.com','localhost']
+    U  = ['anonymous','Elias','demo','dlpuser@dlptest.com','tokelo']
+    Pa = ['anonymous','aswedeal', 'password','5p2tvn92R0di8FdiLCfzeeT0b','1234']
+
+    server = 1
+    serverIP = Po[server]
+    serverName = S[server]
+    userName =  U[server]
+    password = Pa[server]
     client = FTPclient(serverName,serverIP)
     client.initConnection()
     client.login(userName, password)
     client.startPassiveDTPconnection()
+    client.getList()
     
 Main()

@@ -1,0 +1,7 @@
+#Ignoring Testing Folders and Files
+HOME
+*.pdf
+*.mp4
+*.png
+*.jpeg
+*.jpg

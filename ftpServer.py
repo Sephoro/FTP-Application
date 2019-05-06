@@ -6,7 +6,7 @@ import math
 
 
 serverPort = 12000
-serverIP = 'localhost' #socket.gethostbyname(socket.gethostname())
+serverIP = 'localhost'#'10.201.6.13' #'localhost' #socket.gethostbyname(socket.gethostname())
 
 allow_delete = False
 
@@ -30,7 +30,6 @@ class serverThread(threading.Thread):
         # Welcome Message
         resp = '220 Welcome!'
         self.sendReply(resp)
-
         # Await for connection from clients
         while True:
             
@@ -169,10 +168,12 @@ class serverThread(threading.Thread):
             
             # The path relative to the root
             tempDir = '/' + self.cwd
-            print(tempDir)
             cwd = os.path.relpath(tempDir,'/')
-            cwd = '/' + cwd 
-
+            
+            if cwd == '.':
+                cwd = '/'
+            else:
+                cwd = '/' + cwd 
             resp = '257' + ' "' + cwd + '" is the current dir.'
             self.sendReply(resp)
 
@@ -273,8 +274,8 @@ class serverThread(threading.Thread):
             else:
                 self.DTPsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.DTPsocket.connect((self.DTPaddr,self.DTPport))
-            resp = ' 225 Data Connection open'
-            self.sendReply(resp)
+            #resp = ' 225 Data Connection open'
+            #self.sendReply(resp)
         except socket.error:
             resp = '425 Cannot open Data Connection'
             self.sendReply(resp)
@@ -296,17 +297,20 @@ class serverThread(threading.Thread):
             ll = self.toList(os.path.join(self.cwd,l))
             self.sendData(ll)
         self.stopDTPsocket()
+        resp = '200 Listing completed.'
+        self.sendReply(resp)
     
     def toList(self,l):
         st = os.stat(l)
         fullmode ='rwxrwxrwx'
         mode = ''
+
         for i in range(9):
             mode+=((st.st_mode>>(8-i))&1) and fullmode[i] or '-'
         
         d = (os.path.isdir(l)) and 'd' or '-'
         fhist = time.strftime(' %b %d %H:%M ',time.gmtime(st.st_mtime))
-        return d + mode + '1 user group ' + str(st.st_size) + fhist + os.path.basename(l)
+        return d + mode+ '\t1 user'+'\t group \t\t' + str(st.st_size) + '\t' + fhist + '\t' + os.path.basename(l)
     
     def MKD(self,cmd):
         dirName = os.path.join(self.cwd,cmd[4:-2])
@@ -401,7 +405,7 @@ class FTPserver(threading.Thread):
 
 #if __name__ == '__main___':'
 users = './users.txt'
-homeDir = 'HOME'
+homeDir = '.'
 cThread = FTPserver(users,homeDir)
 cThread.daemon = True
 cThread.start()
