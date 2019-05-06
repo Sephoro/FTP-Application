@@ -4,6 +4,7 @@ import socket
 import math
 import sys
 import time
+import os
 from PyQt5 import QtCore, QtGui, QtWidgets
 from clientInterface import Ui_MainWindow
 
@@ -136,6 +137,18 @@ class FTPclient:
 
     def printServerReply(self, resp):
         print('Server :', resp)
+    
+    def setMode(self, mode):
+
+        if mode.upper() == 'I' or mode.upper() == 'A':
+            self.mode = mode
+            cmd = 'TYPE '  + mode
+            self.send(cmd)
+            self.printServerReply(self.getServerReply())
+
+        else:
+            print('Client : Error unknown mode')
+
 
     def startPassiveDTPconnection(self):
 
@@ -179,7 +192,7 @@ class FTPclient:
 
             cmd = 'LIST'
             self.send(cmd)
-            self.printServerReply(self.getServerReply)
+            self.printServerReply(self.getServerReply())
 
             print('\nReceiving Data\n')
 
@@ -192,8 +205,47 @@ class FTPclient:
                     break
 
             print('Downloading done\n')
-            self.printServerReply(self.getServerReply)
+            self.DTPsocket.close()
+            self.printServerReply(self.getServerReply())
+    
+    def downloadFile(self,fileName):
 
+        downloadFolder = 'Downloads'
+        cmd = 'RETR ' +  fileName
+        self.send(cmd)
+        self.printServerReply(self.getServerReply())
+        
+        # Dont continue if there is an error 
+        if not self.errorResp:
+
+            # Create Downloads folder
+            if not os.path.exists(downloadFolder):
+                os.makedirs(downloadFolder)
+            
+            if self.mode == 'I':
+                outfile = open(downloadFolder + '/' + fileName, 'wb')
+            else:
+                outfile = open(downloadFolder + '/' + fileName, 'w')
+            
+            print('Receiving data...')
+            while True:
+                data = self.DTPsocket.recv(1024)
+                if not data:
+                    break
+                outfile.write(data)
+            outfile.close()
+            print('Transfer Succesfull')
+            self.printServerReply(self.getServerReply())
+            self.DTPsocket.close()
+    
+    def changeWD(self,dir):
+        
+        cmd = 'CWD ' + dir
+        self.send(cmd)
+        self.printServerReply(self.getServerReply())
+
+
+            
 
 def Main():
     import sys
@@ -212,6 +264,16 @@ def Main():
     password = Pa[server]
     client = FTPclient(serverName,serverIP)
     client.initConnection()
+    client.login(userName, password)
+    client.startPassiveDTPconnection()
+    client.setMode('I')
+    client.getList()
+    time.sleep(1)
+    client.changeWD('HOME')
+    client.startPassiveDTPconnection()
+    client.getList()
+    client.startPassiveDTPconnection()
+    client.downloadFile('EIE.png')
     client.login(userName, password) """
 # client.startPassiveDTPconnection()
 # client.getList()
