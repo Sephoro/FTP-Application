@@ -171,8 +171,55 @@ class FTPclient:
                 outfile.write(data)
             outfile.close()
             print('Transfer Succesfull')
-            self.printServerReply(self.getServerReply())
             self.DTPsocket.close()
+            self.printServerReply(self.getServerReply())
+            
+    
+    def uploadFile(self,filePath):
+
+        #Check if file path is valid
+        if os.path.exists(filePath):
+            # Get the file name
+            if '/' in filePath:
+                f_index = filePath.rindex('/')
+                fileName = filePath[f_index+1:]
+            else:
+                fileName = filePath
+
+            # Send Command
+            cmd = 'STOR ' + fileName
+            self.send(cmd)
+            self.printServerReply(self.getServerReply())
+        
+            # Continue if there are no errors reported
+            if not self.errorResp:
+                print('Uploading ' + fileName + ' to server...')
+
+                if self.mode == 'I':
+                    uFile = open(filePath, 'rb')
+                else:
+                    uFile = open(filePath, 'r')
+                
+                # Send packets of the file
+                data =  uFile.read(1024)
+
+                while data:
+
+                    if self.mode == 'I':
+                        self.DTPsocket.send(data)
+                    else:
+                        self.DTPsocket.send(data.encode())
+                    data = uFile.read(1024)
+
+                uFile.close()
+                print('Upload success')
+                self.DTPsocket.close()
+                self.printServerReply(self.getServerReply())
+                
+        else:
+            print('Error: invalid path!')
+            self.DTPsocket.close()
+
     
     def changeWD(self,dir):
         
@@ -206,7 +253,12 @@ def Main():
     client.changeWD('HOME')
     client.startPassiveDTPconnection()
     client.getList()
+    time.sleep(1)
     client.startPassiveDTPconnection()
-    client.downloadFile('EIE.png')
+    client.uploadFile('Downloads/bw.jpg')
+    time.sleep(1)
+    client.startPassiveDTPconnection()
+    client.getList()
+    
     
 Main()
