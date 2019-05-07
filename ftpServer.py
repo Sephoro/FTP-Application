@@ -4,17 +4,14 @@ import time
 import threading
 import math
 
-
-serverPort = 12000
-serverIP = 'localhost' #socket.gethostbyname(socket.gethostname())
-
-allow_delete = False
-
 class serverThread(threading.Thread):
-    def __init__(self, conn, addr,usersDB, currDir):
+    
+    def __init__(self, conn, addr,usersDB, currDir,IP, port):
         threading.Thread.__init__(self)
         self.conn = conn
         self.addr = addr
+        self.serverIP = IP
+        self.serverPort = port
         self.baseWD = currDir
         self.cwd = self.baseWD
         self.rest = False
@@ -23,6 +20,8 @@ class serverThread(threading.Thread):
         self.users = usersDB
         self.validUser = False
         self.isConnected = True
+        self.islist = False
+        self.allowDelete = False
     
     def run(self):
 
@@ -30,7 +29,6 @@ class serverThread(threading.Thread):
         # Welcome Message
         resp = '220 Welcome!'
         self.sendReply(resp)
-
         # Await for connection from clients
         while True:
             
@@ -136,16 +134,37 @@ class serverThread(threading.Thread):
         
 
     def STRU(self,cmd):
-        #TODO
-        resp = '200 F.'
+         # Obsolete command
+        stru = cmd[5]
+
+        if stru == 'F':
+            resp = '200 F.'
+        else:
+            resp = '504 Command obsolete'
+
         self.sendReply(resp)
+
+    def MODE(self,cmd):
+        
+        # Obsolete command
+        mode = cmd[5]
+
+        if mode == 'S':
+            resp = '200 MODE set to stream.'
+        else:
+            resp = '504 Command obsolete'
+
+        self.sendReply(resp)
+
        
     def NOOP(self,cmd):
+
+        # To check if the connection is alive
         resp = '200 OK.'
         self.sendReply(resp)
     
     def TYPE(self,cmd):
-        
+
         # ASCII or Binary Mode
         mode = cmd[5]
         
@@ -169,10 +188,12 @@ class serverThread(threading.Thread):
             
             # The path relative to the root
             tempDir = '/' + self.cwd
-            print(tempDir)
             cwd = os.path.relpath(tempDir,'/')
-            cwd = '/' + cwd 
-
+            
+            if cwd == '.':
+                cwd = '/'
+            else:
+                cwd = '/' + cwd 
             resp = '257' + ' "' + cwd + '" is the current dir.'
             self.sendReply(resp)
 
@@ -216,7 +237,7 @@ class serverThread(threading.Thread):
             self.PASVmode = True
 
             self.serverSocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-            self.serverSocket.bind((serverIP,0))
+            self.serverSocket.bind((self.serverIP,0))
             self.serverSocket.listen(1)
 
             ip, port = self.serverSocket.getsockname()
@@ -256,10 +277,14 @@ class serverThread(threading.Thread):
             # Generate the PORT from the connection settings
             # This is with respect to RFC959
             self.DTPport = ((int(conSettings[4])<<8)) + int(conSettings[5])
-        
+            
+            print('Connected to :', self.DTPaddr, self.DTPport)
             # Acknowledge
             resp = '200 Got it.'
             self.sendReply(resp)
+
+            self.DTPsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.DTPsocket.connect((self.DTPaddr,self.DTPport))
 
         else:
             self.notLoggedInMSG()
@@ -270,43 +295,68 @@ class serverThread(threading.Thread):
             if self.PASVmode:
                 self.DTPsocket, addr = self.serverSocket.accept()
                 print('connect: ', addr)
-            else:
-                self.DTPsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.DTPsocket.connect((self.DTPaddr,self.DTPport))
-            resp = ' 225 Data Connection open'
-            self.sendReply(resp)
+            #else:
+                # self.DTPsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                # self.DTPsocket.connect((self.DTPaddr,self.DTPport))
+            #resp = ' 225 Data Connection open'
+            #self.sendReply(resp)
         except socket.error:
             resp = '425 Cannot open Data Connection'
             self.sendReply(resp)
 
     def stopDTPsocket(self):
+
         self.DTPsocket.close()
         if self.PASVmode:
             self.serverSocket.close()
     
     def sendData(self, data):
-        self.DTPsocket.send((data+'\r\n').encode())
+
+        if not self.islist and self.mode == 'I':
+            self.DTPsocket.send((data))   
+        else:
+            self.DTPsocket.send((data+'\r').encode())
 
     def LIST(self,cmd):
-        resp = '150 File status okay; about to open data connection.'
-        self.sendReply(resp)
-        print('list: ', self.cwd)
-        self.startDTPsocket()
-        for l in os.listdir(self.cwd):
-            ll = self.toList(os.path.join(self.cwd,l))
-            self.sendData(ll)
-        self.stopDTPsocket()
+        
+        # Can't list if not logged in
+        if self.isLoggedIn:
+
+            resp = '150 File status okay; about to open data connection.'
+            self.sendReply(resp)
+            print('list: ', self.cwd)
+            
+            # Ready the socket for data transfer
+            self.startDTPsocket()
+
+            # Get each file in the directory
+            for l in os.listdir(self.cwd):
+
+                ll = self.toList(os.path.join(self.cwd,l))
+                # Send as str/ASCII
+                self.islist = True
+                self.sendData(ll)
+                self.islist = False
+            # Done
+            self.stopDTPsocket()
+
+            resp = '200 Listing completed.'
+            self.sendReply(resp)
+
+        else:
+            self.notLoggedInMSG()
     
     def toList(self,l):
         st = os.stat(l)
         fullmode ='rwxrwxrwx'
         mode = ''
+
         for i in range(9):
             mode+=((st.st_mode>>(8-i))&1) and fullmode[i] or '-'
         
         d = (os.path.isdir(l)) and 'd' or '-'
         fhist = time.strftime(' %b %d %H:%M ',time.gmtime(st.st_mtime))
-        return d + mode + '1 user group ' + str(st.st_size) + fhist + os.path.basename(l)
+        return d + mode+ '\t1 user'+'\t group \t\t' + str(st.st_size) + '\t' + fhist + '\t' + os.path.basename(l)
     
     def MKD(self,cmd):
         dirName = os.path.join(self.cwd,cmd[4:-2])
@@ -316,7 +366,7 @@ class serverThread(threading.Thread):
 
     def RMD(self,cmd):
         dirName = os.path.join(self.cwd,cmd[4:-2])
-        if allow_delete:
+        if self.allowDelete:
             os.rmdir(dirName)
             resp = '250 Directory deleted.'
             self.sendReply(resp)
@@ -331,59 +381,100 @@ class serverThread(threading.Thread):
         self.sendReply(resp)
         
     def STOR(self,cmd):
-        
-        fileName = os.path.join(self.cwd,cmd[5:-2])
-        print('Uploading: ', fileName)
 
-        if self.mode == 'I':
-            oFile = open(fileName,'wb')
-        else:
-            oFile = open(fileName, 'w')
-        
-        resp = '150 Opening data connection.'
-        self.sendReply(resp)
-        self.startDTPsocket()
+        # Cant store files if not logged in
+        if self.isLoggedIn:
 
-        while True:
-            data = self.DTPsocket.recv(1024).decode()
-            if not data: break
+            # Create file path
+            fileName = os.path.join(self.cwd,cmd[5:-2])
+            print('Uploading: ', fileName)
+
+            # Upload mode?
+            if self.mode == 'I':
+                oFile = open(fileName,'wb')
+            else:
+                oFile = open(fileName, 'w')
+        
+            resp = '150 Opening data connection.'
+            self.sendReply(resp)
+
+            # Ready the socket for upload
+            self.startDTPsocket()
             
-            oFile.write(data)
-
-        oFile.close()
-        self.stopDTPsocket()
-        resp = '226 Transfer complete.'
-        self.sendReply(resp)
+            # Get the file
+            while True:
+                data = self.DTPsocket.recv(1024)
+                #print(data)
+                if not data: 
+                    break
+                oFile.write(data)
+            
+            # Done
+            self.stopDTPsocket()
+            resp = '226 Transfer complete.'
+            self.sendReply(resp)
+            print('Upload success')
+            oFile.close()
+            
+            
+        else:
+            self.notLoggedInMSG()
 
     def RETR(self,cmd):
-        fileName = os.path.join(self.cwd, cmd[5:-2])
-        print('Downloading :', fileName)
 
-        if self.mode == 'I':
-            rFile = open(fileName, 'rb')
+        # Cant retrieve files if not logged in
+        if self.isLoggedIn:
+         
+            fileName = os.path.join(self.cwd, cmd[5:-2])
+            
+            # For Filezilla
+            if fileName[0] == '/':
+                fileName = fileName[1:]
+            
+            # Check if file exist
+            if os.path.exists(fileName):
+                print('Downloading :', fileName)
+             
+                 # Mode?
+                if self.mode == 'I':
+                    rFile = open(fileName, 'rb')
+                else:
+                    rFile = open(fileName, 'r')
+                    
+             
+                # Open data connection
+                resp = '150 Opening file data connection.'
+                self.sendReply(resp)
+
+                if self.rest:
+                    rFile.seek(self.pos)
+                    self.rest = False
+        
+                data = rFile.read(1024)
+
+                self.startDTPsocket()
+                # Send the file
+                while data:
+                    self.sendData(data)
+                    data = rFile.read(1024)
+                rFile.close()
+                self.stopDTPsocket()
+                resp = '226 Transfer complete.'
+                self.sendReply(resp)
+            else:
+                # File does not exist
+                resp = '550 The system cannot find the file specified.'
+                self.sendReply(resp)
         else:
-            rFile = open(fileName, 'r')
-        
-        resp = '150 Opening data connection.'
-        self.sendReply(resp)
-        if self.rest:
-            rFile.seek(self.pos)
-            self.rest = False
-        
-        data = rFile.read(1024)
-        self.startDTPsocket()
-        while data:
-            self.sendData(data)
-            data = rFile.read(1024)
-        rFile.close()
-        self.stopDTPsocket()
-        resp = '226 Transfer complete.'
-        self.sendReply(resp)
+            self.notLoggedInMSG()
+
         
 class FTPserver(threading.Thread):
-    def __init__(self,usersDB,homeDir):
+    def __init__(self,usersDB,homeDir,IP,Port):
         self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        self.sock.bind((serverIP, serverPort))
+        self.serverIP = IP
+        self.serverPort = Port
+        self.sock.bind((self.serverIP, self.serverPort))
         self.usersDB = usersDB
         self.homeDir = homeDir
         threading.Thread.__init__(self)
@@ -392,19 +483,27 @@ class FTPserver(threading.Thread):
         self.sock.listen(5)
         while True:
             connectionSocket, addr = self.sock.accept()
-            thread = serverThread(connectionSocket, addr,self.usersDB, self.homeDir)
+            thread = serverThread(connectionSocket, addr,self.usersDB, self.homeDir,self.serverIP,self.serverPort)
             thread.daemon = True
             thread.start()
     
     def stop(self):
         self.sock.close()
 
-#if __name__ == '__main___':'
-users = './users.txt'
-homeDir = 'HOME'
-cThread = FTPserver(users,homeDir)
-cThread.daemon = True
-cThread.start()
-print('On', serverIP, ':', serverPort)
-input('Enter to end...\n')
-cThread.stop()
+def Main():
+    
+    serverPort = 12000
+    serverIP = '10.196.6.43' #localhost'#'10.201.6.13' #'localhost' #socket.gethostbyname(socket.gethostname())
+    
+    
+    users = './users.txt'
+    homeDir = '.'
+    cThread = FTPserver(users,homeDir,serverIP,serverPort)
+    cThread.daemon = True
+    cThread.start()
+    print('On', serverIP, ':', serverPort)
+    input('Enter to end...\n')
+    cThread.stop()
+
+
+Main()
