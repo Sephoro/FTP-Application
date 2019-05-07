@@ -259,54 +259,6 @@ font: 57 11pt &quot;Ubuntu&quot;;</string>
        <string>ACTIVE</string>
       </property>
      </widget>
-     <widget class="QLabel" name="label_8">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>300</y>
-        <width>67</width>
-        <height>17</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">font: 13pt &quot;Ubuntu&quot;;</string>
-      </property>
-      <property name="text">
-       <string>Mode</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="ascii">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>370</y>
-        <width>101</width>
-        <height>25</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true"/>
-      </property>
-      <property name="text">
-       <string>ASCII</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="binary">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>330</y>
-        <width>101</width>
-        <height>25</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true"/>
-      </property>
-      <property name="text">
-       <string>BINARY</string>
-      </property>
-     </widget>
      <widget class="QLabel" name="label_10">
       <property name="geometry">
        <rect>
@@ -327,7 +279,7 @@ font: 57 11pt &quot;Ubuntu&quot;;</string>
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>20</y>
+        <y>40</y>
         <width>111</width>
         <height>25</height>
        </rect>
@@ -343,7 +295,7 @@ font: 57 11pt &quot;Ubuntu&quot;;</string>
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>60</y>
+        <y>10</y>
         <width>113</width>
         <height>25</height>
        </rect>

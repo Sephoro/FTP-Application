@@ -16,6 +16,8 @@ class cleintInterface(Ui_MainWindow):
         self.numFiles = 0
         self.finerList = []
         self.r = 0
+        self.passiveMode = True
+        self.selectedDir = ' '
         
         # ------------- Set up tree model for the local host window--------------------
       
@@ -30,6 +32,7 @@ class cleintInterface(Ui_MainWindow):
 
     def loginButtonClicked(self):
         
+        self.pasv.setStyleSheet("background-color: rgb(138, 226, 52);")
         self.ftpLogic.initConnection("127.0.1.1", int("21"))
         self.ftpLogic.login("Elias", "aswedeal")
         #self.ftpLogic.initConnection(self.hostname.text(), int(self.port.text()))
@@ -37,8 +40,13 @@ class cleintInterface(Ui_MainWindow):
         self.generateLogTable()
         self.statusMSG()
         self.ftpLogic.setMode('I')
-        self.localdir.setEnabled(True)       
-        self.ftpLogic.startPassiveDTPconnection()
+        self.localdir.setEnabled(True)
+        
+        if self.passiveMode:       
+            self.ftpLogic.startPassiveDTPconnection()
+        else:
+            self.ftpLogic.startActiveConnection()
+            
         self.ftpLogic.getList()
         self.getRemoteDirList()
     
@@ -58,7 +66,12 @@ class cleintInterface(Ui_MainWindow):
         self.noopButtonClicked()
         self.homeDirButtonClicked()
         self.logoutButtonClicked()
-    
+        self.activeButtonClicked()
+        self.passiveButtonClicked()
+        self.makeDirButtonClicked()
+        # self.oneClickselectedFile()
+        #self.removeDirButtonClicked()
+        
     def remoteWindow(self):
         self.remotedir.setRowCount(self.numFiles)
         self.remotedir.setColumnCount(6)
@@ -74,7 +87,43 @@ class cleintInterface(Ui_MainWindow):
         self.statusWindow.setColumnCount(1)
         self.statusWindow.setColumnWidth(0, 820)
         self.statusWindow.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem("Latest Session Log"))
+    
+    def passiveButtonClicked(self):
+        self.pasv.clicked.connect(self.pasvMode)
+    
+    def pasvMode(self):
+        self.passiveMode = True
+        self.pasv.setStyleSheet("background-color: rgb(138, 226, 52);")
+        self.active.setStyleSheet("")
+    
+    def activeButtonClicked(self):
+        self.active.clicked.connect(self.actMode)
+    
+    def actMode(self):
+        self.passiveMode = False
+        self.active.setStyleSheet("background-color: rgb(138, 226, 52);")
+        self.pasv.setStyleSheet("")
+    
+    def removeDirButtonClicked(self):
+        self.remotedir.clicked.connect(self.removeDirectory)
         
+    def removeDirectory(self):
+        self.remotedir.cellClicked.connect(self.cellClickedOnce_)
+        self.ftpLogic.remDir(self.selectedDir)
+        self.statusMSG()
+        self.generateLogTable()
+    
+    def makeDirButtonClicked(self):
+        self.makeDir.clicked.connect(self.mkDir)
+        
+    def mkDir(self):
+        
+        self.ftpLogic.makeDir(self.dirName.text())
+        self.statusMSG()
+        self.generateLogTable()
+        
+                 
+   
     def statusMSG(self):
         self.status.setText(self.ftpLogic.getStatus())
     
@@ -153,19 +202,31 @@ class cleintInterface(Ui_MainWindow):
     
     def uploadFile(self, filePath):
         
-        self.ftpLogic.startPassiveDTPconnection()
+        if self.passiveMode:       
+            self.ftpLogic.startPassiveDTPconnection()
+        else:
+            self.ftpLogic.startActiveConnection()
+            
         self.ftpLogic.uploadFile(filePath)
         self.statusMSG()
         self.generateLogTable() 
         
-           
+   # def oneClickselectedFile(self):
+       # self.remotedir.cellClicked.connect(self.cellClickedOnce_)
+
+        
+    def cellClickedOnce_(self, row, column):
+        
+        self.selectedDir = self.remotedir.item(row,column).text().strip('\r')
+        
+        
     def selectedFile(self):   
             
-        self.remotedir.cellDoubleClicked.connect(self.cell_was_clicked)
+        self.remotedir.cellDoubleClicked.connect(self.cellDoubleClicked_)
         self.statusMSG()
         self.generateLogTable()   
         
-    def cell_was_clicked(self, row, column):
+    def cellDoubleClicked_(self, row, column):
         
         item = self.remotedir.item(row,column).text()
         
@@ -181,7 +242,11 @@ class cleintInterface(Ui_MainWindow):
                 
     def downloadFile(self, fileName):
         
-        self.ftpLogic.startPassiveDTPconnection()
+        if self.passiveMode:       
+            self.ftpLogic.startPassiveDTPconnection()
+        else:
+            self.ftpLogic.startActiveConnection()
+            
         self.ftpLogic.downloadFile(fileName)
         self.statusMSG()
         self.generateLogTable()
@@ -190,7 +255,12 @@ class cleintInterface(Ui_MainWindow):
     def openDir(self,folderName):
         
         self.ftpLogic.changeWD(folderName)
-        self.ftpLogic.startPassiveDTPconnection()
+        
+        if self.passiveMode:       
+            self.ftpLogic.startPassiveDTPconnection()
+        else:
+            self.ftpLogic.startActiveConnection()
+            
         self.ftpLogic.getList()
         self.getRemoteDirList()
         self.generateRemoteTable()
@@ -207,7 +277,12 @@ class cleintInterface(Ui_MainWindow):
     def toHomeDir(self):
         
         self.ftpLogic.changeWD('/')
-        self.ftpLogic.startPassiveDTPconnection()
+        
+        if self.passiveMode:       
+            self.ftpLogic.startPassiveDTPconnection()
+        else:
+            self.ftpLogic.startActiveConnection()
+            
         self.ftpLogic.getList()
         self.getRemoteDirList()
         self.generateRemoteTable()
