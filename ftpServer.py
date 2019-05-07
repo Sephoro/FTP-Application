@@ -404,7 +404,7 @@ class serverThread(threading.Thread):
             
             # Get the file
             while True:
-                data = self.DTPsocket.recv(1024)
+                data = self.DTPsocket.recv(8192)
                 #print(data)
                 if not data: 
                     break
@@ -451,13 +451,13 @@ class serverThread(threading.Thread):
                     rFile.seek(self.pos)
                     self.rest = False
         
-                data = rFile.read(1024)
+                data = rFile.read(8192)
 
                 self.startDTPsocket()
                 # Send the file
                 while data:
                     self.sendData(data)
-                    data = rFile.read(1024)
+                    data = rFile.read(8192)
                 rFile.close()
                 self.stopDTPsocket()
                 resp = '226 Transfer complete.'
@@ -494,9 +494,7 @@ class FTPserver(threading.Thread):
 def Main():
     
     serverPort = 12000
-    serverIP = '10.203.51.64'#'localhost' #localhost'#'10.201.6.13' #'localhost' #socket.gethostbyname(socket.gethostname())
-    
-    
+    serverIP = 'localhost'  
     users = './users.txt'
     homeDir = '.'
     cThread = FTPserver(users,homeDir,serverIP,serverPort)
@@ -505,6 +503,5 @@ def Main():
     print('On', serverIP, ':', serverPort)
     input('Enter to end...\n')
     cThread.stop()
-
-
+    
 Main()
