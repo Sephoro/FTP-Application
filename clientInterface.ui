@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>907</width>
-    <height>545</height>
+    <width>1056</width>
+    <height>866</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,7 +19,7 @@
      <rect>
       <x>10</x>
       <y>20</y>
-      <width>891</width>
+      <width>1031</width>
       <height>41</height>
      </rect>
     </property>
@@ -58,7 +58,7 @@
     <widget class="QLabel" name="label_2">
      <property name="geometry">
       <rect>
-       <x>240</x>
+       <x>270</x>
        <y>10</y>
        <width>81</width>
        <height>17</height>
@@ -71,7 +71,7 @@
     <widget class="QLineEdit" name="username">
      <property name="geometry">
       <rect>
-       <x>330</x>
+       <x>360</x>
        <y>10</y>
        <width>113</width>
        <height>25</height>
@@ -81,7 +81,7 @@
     <widget class="QLabel" name="label_3">
      <property name="geometry">
       <rect>
-       <x>450</x>
+       <x>500</x>
        <y>10</y>
        <width>71</width>
        <height>17</height>
@@ -94,7 +94,7 @@
     <widget class="QLineEdit" name="password">
      <property name="geometry">
       <rect>
-       <x>520</x>
+       <x>580</x>
        <y>10</y>
        <width>111</width>
        <height>25</height>
@@ -104,7 +104,7 @@
     <widget class="QLabel" name="label_4">
      <property name="geometry">
       <rect>
-       <x>640</x>
+       <x>720</x>
        <y>10</y>
        <width>41</width>
        <height>17</height>
@@ -117,7 +117,7 @@
     <widget class="QLineEdit" name="port">
      <property name="geometry">
       <rect>
-       <x>690</x>
+       <x>770</x>
        <y>10</y>
        <width>81</width>
        <height>25</height>
@@ -127,7 +127,7 @@
     <widget class="QPushButton" name="loginButton">
      <property name="geometry">
       <rect>
-       <x>790</x>
+       <x>920</x>
        <y>10</y>
        <width>89</width>
        <height>25</height>
@@ -149,8 +149,8 @@ font: 57 11pt &quot;Ubuntu&quot;;</string>
    <widget class="QLabel" name="status">
     <property name="geometry">
      <rect>
-      <x>80</x>
-      <y>460</y>
+      <x>70</x>
+      <y>560</y>
       <width>671</width>
       <height>31</height>
      </rect>
@@ -166,7 +166,7 @@ font: 57 11pt &quot;Ubuntu&quot;;</string>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>460</y>
+      <y>560</y>
       <width>71</width>
       <height>31</height>
      </rect>
@@ -182,8 +182,8 @@ color: rgb(204, 0, 0);</string>
    <widget class="QPushButton" name="logoutButton">
     <property name="geometry">
      <rect>
-      <x>790</x>
-      <y>460</y>
+      <x>960</x>
+      <y>550</y>
       <width>89</width>
       <height>25</height>
      </rect>
@@ -200,8 +200,8 @@ color: rgb(204, 0, 0);</string>
      <rect>
       <x>10</x>
       <y>80</y>
-      <width>891</width>
-      <height>371</height>
+      <width>1031</width>
+      <height>461</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -216,7 +216,7 @@ color: rgb(204, 0, 0);</string>
        <x>10</x>
        <y>40</y>
        <width>131</width>
-       <height>311</height>
+       <height>391</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -229,7 +229,7 @@ color: rgb(204, 0, 0);</string>
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>0</y>
+        <y>20</y>
         <width>89</width>
         <height>25</height>
        </rect>
@@ -242,7 +242,7 @@ color: rgb(204, 0, 0);</string>
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>230</y>
+        <y>270</y>
         <width>89</width>
         <height>25</height>
        </rect>
@@ -255,7 +255,7 @@ color: rgb(204, 0, 0);</string>
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>30</y>
+        <y>60</y>
         <width>89</width>
         <height>25</height>
        </rect>
@@ -268,7 +268,7 @@ color: rgb(204, 0, 0);</string>
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>70</y>
+        <y>110</y>
         <width>89</width>
         <height>25</height>
        </rect>
@@ -281,7 +281,7 @@ color: rgb(204, 0, 0);</string>
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>110</y>
+        <y>150</y>
         <width>89</width>
         <height>25</height>
        </rect>
@@ -294,7 +294,7 @@ color: rgb(204, 0, 0);</string>
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>270</y>
+        <y>320</y>
         <width>89</width>
         <height>25</height>
        </rect>
@@ -307,7 +307,7 @@ color: rgb(204, 0, 0);</string>
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>150</y>
+        <y>190</y>
         <width>89</width>
         <height>25</height>
        </rect>
@@ -320,7 +320,7 @@ color: rgb(204, 0, 0);</string>
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>190</y>
+        <y>230</y>
         <width>89</width>
         <height>25</height>
        </rect>
@@ -346,10 +346,10 @@ color: rgb(204, 0, 0);</string>
     <widget class="QFrame" name="frame_4">
      <property name="geometry">
       <rect>
-       <x>520</x>
+       <x>550</x>
        <y>40</y>
-       <width>341</width>
-       <height>311</height>
+       <width>461</width>
+       <height>391</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -362,9 +362,9 @@ color: rgb(204, 0, 0);</string>
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>10</y>
-        <width>311</width>
-        <height>291</height>
+        <y>20</y>
+        <width>421</width>
+        <height>351</height>
        </rect>
       </property>
      </widget>
@@ -388,10 +388,10 @@ color: rgb(204, 0, 0);</string>
     <widget class="QFrame" name="frame_3">
      <property name="geometry">
       <rect>
-       <x>180</x>
+       <x>160</x>
        <y>40</y>
-       <width>321</width>
-       <height>311</height>
+       <width>371</width>
+       <height>391</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -404,9 +404,9 @@ color: rgb(204, 0, 0);</string>
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>10</y>
-        <width>291</width>
-        <height>291</height>
+        <y>20</y>
+        <width>331</width>
+        <height>351</height>
        </rect>
       </property>
      </widget>
@@ -425,13 +425,23 @@ color: rgb(204, 0, 0);</string>
      </property>
     </widget>
    </widget>
+   <widget class="QTableWidget" name="statusWindow">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>600</y>
+      <width>841</width>
+      <height>192</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>907</width>
+     <width>1056</width>
      <height>22</height>
     </rect>
    </property>

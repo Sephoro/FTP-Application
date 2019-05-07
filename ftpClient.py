@@ -27,7 +27,7 @@ class cleintInterface(Ui_MainWindow):
         self.localdir.setModel(self.clientDirectory)
         self.localdir.setRootIndex(self.clientDirectory.setRootPath(QtCore.QDir.rootPath()))
         self.pathSelectedItem = QtCore.QDir.rootPath()
-        self.localdir.header().resizeSection(0, 300)
+        self.localdir.header().resizeSection(0, 150)
 		
         # ----------------- End Tree View -----------------------------
 
@@ -42,6 +42,8 @@ class cleintInterface(Ui_MainWindow):
         self.ftpLogic.getList()
         
         self.getRemoteDirList()
+        self.sWindow()
+       
         
         #set the number of rows according to the number of files
         self.numFiles = len(self.finerList)
@@ -56,6 +58,8 @@ class cleintInterface(Ui_MainWindow):
         self.remotedir.setHorizontalHeaderItem(3, QtWidgets.QTableWidgetItem("Group"))
         self.remotedir.setHorizontalHeaderItem(4, QtWidgets.QTableWidgetItem("User"))
         self.remotedir.setHorizontalHeaderItem(5, QtWidgets.QTableWidgetItem("Permissions"))
+        
+       
          
         #display the file and its characteristic in the remote directory view
         
@@ -67,6 +71,8 @@ class cleintInterface(Ui_MainWindow):
                     
             for col in range(6):              
                 self.remotedir.setItem(row,col, QtWidgets.QTableWidgetItem(items[5-col]))
+        
+        self.selectedFile()
                 
         
     def treeViewClientDirectoryClicked(self, signal):
@@ -88,14 +94,31 @@ class cleintInterface(Ui_MainWindow):
                 
                 for i in range(s):
                     self.finerList.append(temp[i])
-        counter = 0
+        #counter = 0
         #Display all files in the console
         """ for e in self.finerList:    
             print(counter)   
             print(e, " \n")
             counter = counter + 1 """
-             
- 
+    
+    def sWindow(self):
+        
+        self.statusWindow.setRowCount(3)
+        self.statusWindow.setColumnCount(2)
+        self.statusWindow.setColumnWidth(0, 180)
+        self.statusWindow.setColumnWidth(1, 630)
+        self.statusWindow.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem("Code"))
+        self.statusWindow.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem("Message"))
+    
+    def selectedFile(self):
+        
+        print("Hello")
+        #for currentQTableWidgetRow in self.remotedir.selectionModel().selectedRows():
+        f = self.remotedir.item(0, 0).text()
+        #print(self.remotedir.selectionModel().selectedRows())
+        print(f)
+                
+    
  
 class statusMessage:
      
@@ -247,14 +270,13 @@ class FTPclient:
             while True:
                 # Get the directory list
                 data = self.DTPsocket.recv(1024)
-                #print(data.decode())
+                
                 self.remotedirList.append(data.decode())
 
                 if not data:
                     break
 
             print('Downloading done\n')
-            #print(self.remotedirList)
             self.DTPsocket.close()
             self.printServerReply(self.getServerReply())
     
