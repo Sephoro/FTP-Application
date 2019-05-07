@@ -182,7 +182,7 @@ color: rgb(204, 0, 0);</string>
    <widget class="QPushButton" name="logoutButton">
     <property name="geometry">
      <rect>
-      <x>960</x>
+      <x>930</x>
       <y>550</y>
       <width>89</width>
       <height>25</height>
@@ -216,7 +216,7 @@ color: rgb(204, 0, 0);</string>
        <x>10</x>
        <y>40</y>
        <width>131</width>
-       <height>391</height>
+       <height>411</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -225,7 +225,7 @@ color: rgb(204, 0, 0);</string>
      <property name="frameShadow">
       <enum>QFrame::Sunken</enum>
      </property>
-     <widget class="QPushButton" name="retrButton">
+     <widget class="QPushButton" name="storButton">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -234,24 +234,14 @@ color: rgb(204, 0, 0);</string>
         <height>25</height>
        </rect>
       </property>
-      <property name="text">
-       <string>RETR</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="deleButton">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>270</y>
-        <width>89</width>
-        <height>25</height>
-       </rect>
+      <property name="styleSheet">
+       <string notr="true"/>
       </property>
       <property name="text">
-       <string>DELE</string>
+       <string>STOR</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="storButton">
+     <widget class="QPushButton" name="pwdButton">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -260,73 +250,123 @@ color: rgb(204, 0, 0);</string>
         <height>25</height>
        </rect>
       </property>
-      <property name="text">
-       <string>STOR</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="mkdirButton">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>110</y>
-        <width>89</width>
-        <height>25</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>MKDIR</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="listButton">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>150</y>
-        <width>89</width>
-        <height>25</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>LIST</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_7">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>320</y>
-        <width>89</width>
-        <height>25</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>QUIT</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pwdButton">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>190</y>
-        <width>89</width>
-        <height>25</height>
-       </rect>
+      <property name="styleSheet">
+       <string notr="true"/>
       </property>
       <property name="text">
        <string>PWD</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="cwdButton">
+     <widget class="QPushButton" name="noop">
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>230</y>
+        <y>100</y>
         <width>89</width>
         <height>25</height>
        </rect>
       </property>
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
       <property name="text">
-       <string>CWD</string>
+       <string>NOOP</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pasv">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>180</y>
+        <width>89</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
+      <property name="text">
+       <string>PASV</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="port_2">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>220</y>
+        <width>89</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
+      <property name="text">
+       <string>PORT</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_8">
+      <property name="geometry">
+       <rect>
+        <x>40</x>
+        <y>270</y>
+        <width>67</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">font: 13pt &quot;Ubuntu&quot;;</string>
+      </property>
+      <property name="text">
+       <string>Mode</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="ascii">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>340</y>
+        <width>89</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
+      <property name="text">
+       <string>ASCII</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="binary">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>300</y>
+        <width>89</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
+      <property name="text">
+       <string>BINARY</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_10">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>130</y>
+        <width>81</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">font: 13pt &quot;Ubuntu&quot;;</string>
+      </property>
+      <property name="text">
+       <string>Conn Type</string>
       </property>
      </widget>
     </widget>

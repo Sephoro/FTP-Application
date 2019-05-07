@@ -19,6 +19,7 @@ class cleintInterface(Ui_MainWindow):
         self.loginButton.clicked.connect(self.loginButtonClicked)
         self.numFiles = 0
         self.finerList = []
+        self.r = 0
         
         # ------------- Set up tree model for the local host --------------------
       
@@ -32,10 +33,10 @@ class cleintInterface(Ui_MainWindow):
         # ----------------- End Tree View -----------------------------
 
     def loginButtonClicked(self):
-        self.ftpLogic.initConnection("localhost", int("12000"))
-        self.ftpLogic.login("Elias", "aswedeal")
-        """ self.ftpLogic.initConnection(self.hostname.text(), int(self.port.text()))
-        self.ftpLogic.login(self.username.text(), self.password.text()) """
+        #self.ftpLogic.initConnection("localhost", int("12000"))
+        #self.ftpLogic.login("Elias", "aswedeal")
+        self.ftpLogic.initConnection(self.hostname.text(), int(self.port.text()))
+        self.ftpLogic.login(self.username.text(), self.password.text())
         self.ftpLogic.setMode('I')
         self.status.setText(st.getStatus())
         self.localdir.setEnabled(True)       
@@ -66,7 +67,11 @@ class cleintInterface(Ui_MainWindow):
         self.generateRemoteTable()
         #check which file is selected
         self.selectedFile()
+        self.selectedLocalFile()
+        self.noopButtonClicked()
+        #self.statuses()
         self.homeDirButtonClicked()
+        self.logoutButtonClicked()
                 
         
     def treeViewClientDirectoryClicked(self, signal):
@@ -77,7 +82,6 @@ class cleintInterface(Ui_MainWindow):
         
         
         self.numFiles = len(self.finerList)
-        print(self.numFiles)
         
         for row in range(self.numFiles):
             
@@ -87,7 +91,15 @@ class cleintInterface(Ui_MainWindow):
                     
             for col in range(6):              
                 self.remotedir.setItem(row,col, QtWidgets.QTableWidgetItem(items[5-col]))
+                
+    """ def statuses(self):
         
+        stats = self.ftpLogic.getComm()
+       
+        for e in stats:
+             self.statusWindow.setItem(self.r, QtWidgets.QTableWidgetItem(e))
+             
+        self.r = self.r + 1 """
               
     def getRemoteDirList(self):
         
@@ -112,6 +124,7 @@ class cleintInterface(Ui_MainWindow):
                 for i in range(s):
                     self.finerList.append(temp[i])
         
+        
     def sWindow(self):
         
         self.statusWindow.setRowCount(3)
@@ -119,13 +132,30 @@ class cleintInterface(Ui_MainWindow):
         self.statusWindow.setColumnWidth(0, 180)
         self.statusWindow.setColumnWidth(1, 630)
         self.statusWindow.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem("Code"))
-        self.statusWindow.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem("Message"))
+
     
+      
+    def selectedLocalFile(self):
+        
+         self.localdir.doubleClicked.connect(self.test)  
+       
+        
+    def test(self, signal):
+        file_path= self.clientDirectory.filePath(signal)
+        
+        if file_path.find('.') > 0:
+            self.uploadFile(file_path)
+              
+    
+    def uploadFile(self, filePath):
+        self.ftpLogic.startPassiveDTPconnection()
+        self.ftpLogic.uploadFile(filePath)
+        
+           
     def selectedFile(self):
         
-        self.remotedir.cellDoubleClicked.connect(self.cell_was_clicked)      
+        self.remotedir.cellDoubleClicked.connect(self.cell_was_clicked)   
         
-    
     def cell_was_clicked(self, row, column):
         item = self.remotedir.item(row,column).text()
         
@@ -161,8 +191,20 @@ class cleintInterface(Ui_MainWindow):
         self.ftpLogic.getList()
         self.getRemoteDirList()
         self.generateRemoteTable()
-        
     
+    def logoutButtonClicked(self):
+        self.logoutButton.clicked.connect(self.Logout)
+        
+    def Logout(self):
+        self.ftpLogic.logout()
+        self.ftpLogic.logout()
+    
+    def noopButtonClicked(self):
+        self.noop.clicked.connect(self.nooP)
+        
+    def nooP(self):
+        self.ftpLogic.checkConnection()
+        
 class statusMessage:
      
     def __init__(self):
@@ -186,6 +228,7 @@ class FTPclient:
         self.loggedIn = False
         self.user = None
         self.remotedirList = []
+        self.collectMSG = []
         self.clientName = clientName
         
     def initConnection(self, serverIPname, serverIPport):
@@ -239,10 +282,12 @@ class FTPclient:
 
         self.IPsocket.send((cmd + '\r\n').encode())
         print('Client: ', cmd)
+        self.collectMSG.append(cmd)
 
     def getServerReply(self):
 
         resp = self.IPsocket.recv(1024).decode()
+        self.collectMSG.append(resp)
 
         # Notify if this an error
         if resp[0] != '5' and resp[0] != '4':
@@ -264,6 +309,9 @@ class FTPclient:
 
         else:
             print('Client : Error unknown mode')
+    
+    def getComm(self):
+        return self.collectMSG
 
 
     def startPassiveDTPconnection(self):
@@ -339,13 +387,12 @@ class FTPclient:
             cmd = 'LIST'
             self.send(cmd)
             self.printServerReply(self.getServerReply())
-
+            
             print('\nReceiving Data\n')
 
             while True:
                 # Get the directory list
                 data = self.DTPsocket.recv(1024)
-                
                 self.remotedirList.append(data.decode())
 
                 if not data:
@@ -430,6 +477,7 @@ class FTPclient:
         else:
             print('Error: invalid path!')
             self.DTPsocket.close()
+            
     def returnDirList(self):
         return self.remotedirList
     
@@ -438,6 +486,20 @@ class FTPclient:
         cmd = 'CWD ' + dir
         self.send(cmd)
         self.printServerReply(self.getServerReply())
+
+    def logout(self):
+        
+        cmd = 'QUIT'
+        self.send(cmd)
+        self.printServerReply(self.getServerReply())
+        
+    def checkConnection(self):
+        
+        cmd = 'NOOP'
+        self.send(cmd)
+        self.printServerReply(self.getServerReply())
+        
+        
 
 
             

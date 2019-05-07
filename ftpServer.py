@@ -494,7 +494,7 @@ class FTPserver(threading.Thread):
 def Main():
     
     serverPort = 12000
-    serverIP = 'localhost' #localhost'#'10.201.6.13' #'localhost' #socket.gethostbyname(socket.gethostname())
+    serverIP = '10.203.51.64'#'localhost' #localhost'#'10.201.6.13' #'localhost' #socket.gethostbyname(socket.gethostname())
     
     
     users = './users.txt'
