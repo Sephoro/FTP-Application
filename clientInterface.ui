@@ -100,6 +100,9 @@
        <height>25</height>
       </rect>
      </property>
+     <property name="echoMode">
+      <enum>QLineEdit::Password</enum>
+     </property>
     </widget>
     <widget class="QLabel" name="label_4">
      <property name="geometry">
@@ -145,39 +148,6 @@ font: 57 11pt &quot;Ubuntu&quot;;</string>
       <string>Login</string>
      </property>
     </widget>
-   </widget>
-   <widget class="QLabel" name="status">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>560</y>
-      <width>671</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">font: 13pt &quot;Ubuntu&quot;;</string>
-    </property>
-    <property name="text">
-     <string>File Successfully Transferred!</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_9">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>560</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">font: 13pt &quot;Ubuntu&quot;;
-color: rgb(204, 0, 0);</string>
-    </property>
-    <property name="text">
-     <string>Status:</string>
-    </property>
    </widget>
    <widget class="QPushButton" name="logoutButton">
     <property name="geometry">
@@ -225,12 +195,12 @@ color: rgb(204, 0, 0);</string>
      <property name="frameShadow">
       <enum>QFrame::Sunken</enum>
      </property>
-     <widget class="QPushButton" name="storButton">
+     <widget class="QPushButton" name="remove">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>20</y>
-        <width>89</width>
+        <x>10</x>
+        <y>100</y>
+        <width>111</width>
         <height>25</height>
        </rect>
       </property>
@@ -238,31 +208,15 @@ color: rgb(204, 0, 0);</string>
        <string notr="true"/>
       </property>
       <property name="text">
-       <string>STOR</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pwdButton">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>60</y>
-        <width>89</width>
-        <height>25</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true"/>
-      </property>
-      <property name="text">
-       <string>PWD</string>
+       <string>REMOVE DIR</string>
       </property>
      </widget>
      <widget class="QPushButton" name="noop">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>100</y>
-        <width>89</width>
+        <x>10</x>
+        <y>140</y>
+        <width>111</width>
         <height>25</height>
        </rect>
       </property>
@@ -270,15 +224,15 @@ color: rgb(204, 0, 0);</string>
        <string notr="true"/>
       </property>
       <property name="text">
-       <string>NOOP</string>
+       <string>CHECK CONN.</string>
       </property>
      </widget>
      <widget class="QPushButton" name="pasv">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>180</y>
-        <width>89</width>
+        <x>10</x>
+        <y>220</y>
+        <width>101</width>
         <height>25</height>
        </rect>
       </property>
@@ -286,15 +240,15 @@ color: rgb(204, 0, 0);</string>
        <string notr="true"/>
       </property>
       <property name="text">
-       <string>PASV</string>
+       <string>PASSIVE</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="port_2">
+     <widget class="QPushButton" name="active">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>220</y>
-        <width>89</width>
+        <x>10</x>
+        <y>260</y>
+        <width>101</width>
         <height>25</height>
        </rect>
       </property>
@@ -302,14 +256,14 @@ color: rgb(204, 0, 0);</string>
        <string notr="true"/>
       </property>
       <property name="text">
-       <string>PORT</string>
+       <string>ACTIVE</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_8">
       <property name="geometry">
        <rect>
-        <x>40</x>
-        <y>270</y>
+        <x>30</x>
+        <y>300</y>
         <width>67</width>
         <height>17</height>
        </rect>
@@ -324,9 +278,9 @@ color: rgb(204, 0, 0);</string>
      <widget class="QPushButton" name="ascii">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>340</y>
-        <width>89</width>
+        <x>10</x>
+        <y>370</y>
+        <width>101</width>
         <height>25</height>
        </rect>
       </property>
@@ -340,9 +294,9 @@ color: rgb(204, 0, 0);</string>
      <widget class="QPushButton" name="binary">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>300</y>
-        <width>89</width>
+        <x>10</x>
+        <y>330</y>
+        <width>101</width>
         <height>25</height>
        </rect>
       </property>
@@ -357,7 +311,7 @@ color: rgb(204, 0, 0);</string>
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>130</y>
+        <y>170</y>
         <width>81</width>
         <height>41</height>
        </rect>
@@ -367,6 +321,35 @@ color: rgb(204, 0, 0);</string>
       </property>
       <property name="text">
        <string>Conn Type</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="makeDir">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>20</y>
+        <width>111</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
+      <property name="text">
+       <string>MAKE DIR</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="dirName">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>60</y>
+        <width>113</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="placeholderText">
+       <string>Dir Name</string>
       </property>
      </widget>
     </widget>
@@ -481,15 +464,64 @@ color: rgb(204, 0, 0);</string>
      </property>
     </widget>
    </widget>
-   <widget class="QTableWidget" name="statusWindow">
+   <widget class="QFrame" name="frame_6">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>600</y>
-      <width>841</width>
-      <height>192</height>
+      <x>10</x>
+      <y>579</y>
+      <width>1031</width>
+      <height>241</height>
      </rect>
     </property>
+    <property name="frameShape">
+     <enum>QFrame::WinPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Sunken</enum>
+    </property>
+    <widget class="QLabel" name="status">
+     <property name="geometry">
+      <rect>
+       <x>100</x>
+       <y>10</y>
+       <width>671</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font: 13pt &quot;Ubuntu&quot;;</string>
+     </property>
+     <property name="text">
+      <string>File Successfully Transferred!</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_9">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>10</y>
+       <width>71</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font: 13pt &quot;Ubuntu&quot;;
+color: rgb(204, 0, 0);</string>
+     </property>
+     <property name="text">
+      <string>Status:</string>
+     </property>
+    </widget>
+    <widget class="QTableWidget" name="statusWindow">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>40</y>
+       <width>841</width>
+       <height>181</height>
+      </rect>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
