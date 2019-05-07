@@ -349,7 +349,7 @@ color: rgb(204, 0, 0);</string>
        <x>550</x>
        <y>40</y>
        <width>461</width>
-       <height>391</height>
+       <height>411</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -366,6 +366,22 @@ color: rgb(204, 0, 0);</string>
         <width>421</width>
         <height>351</height>
        </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="homedir">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>380</y>
+        <width>89</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(114, 159, 207);</string>
+      </property>
+      <property name="text">
+       <string>Home Dir</string>
       </property>
      </widget>
     </widget>
@@ -391,7 +407,7 @@ color: rgb(204, 0, 0);</string>
        <x>160</x>
        <y>40</y>
        <width>371</width>
-       <height>391</height>
+       <height>411</height>
       </rect>
      </property>
      <property name="frameShape">

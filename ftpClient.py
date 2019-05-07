@@ -36,6 +36,7 @@ class cleintInterface(Ui_MainWindow):
         self.ftpLogic.login("Elias", "aswedeal")
         """ self.ftpLogic.initConnection(self.hostname.text(), int(self.port.text()))
         self.ftpLogic.login(self.username.text(), self.password.text()) """
+        self.ftpLogic.setMode('I')
         self.status.setText(st.getStatus())
         self.localdir.setEnabled(True)       
         self.ftpLogic.startPassiveDTPconnection()
@@ -62,6 +63,21 @@ class cleintInterface(Ui_MainWindow):
        
          
         #display the file and its characteristic in the remote directory view
+        self.generateRemoteTable()
+        #check which file is selected
+        self.selectedFile()
+        self.homeDirButtonClicked()
+                
+        
+    def treeViewClientDirectoryClicked(self, signal):
+        self.pathSelectedItem = self.localdir.model().filePath(signal)
+        print(self.pathSelectedItem)
+    
+    def generateRemoteTable(self):
+        
+        
+        self.numFiles = len(self.finerList)
+        print(self.numFiles)
         
         for row in range(self.numFiles):
             
@@ -72,15 +88,16 @@ class cleintInterface(Ui_MainWindow):
             for col in range(6):              
                 self.remotedir.setItem(row,col, QtWidgets.QTableWidgetItem(items[5-col]))
         
-        self.selectedFile()
-                
-        
-    def treeViewClientDirectoryClicked(self, signal):
-        self.pathSelectedItem = self.localdir.model().filePath(signal)
-        print(self.pathSelectedItem)
-        
-        
+              
     def getRemoteDirList(self):
+        
+        for row in range(len(self.finerList)):
+            for col in range(6):              
+                self.remotedir.setItem(row,col, QtWidgets.QTableWidgetItem(''))
+                
+        self.finerList.clear()
+        
+        
         self.dirList = self.ftpLogic.returnDirList()
         
         for element in self.dirList:
@@ -94,13 +111,7 @@ class cleintInterface(Ui_MainWindow):
                 
                 for i in range(s):
                     self.finerList.append(temp[i])
-        #counter = 0
-        #Display all files in the console
-        """ for e in self.finerList:    
-            print(counter)   
-            print(e, " \n")
-            counter = counter + 1 """
-    
+        
     def sWindow(self):
         
         self.statusWindow.setRowCount(3)
@@ -112,14 +123,46 @@ class cleintInterface(Ui_MainWindow):
     
     def selectedFile(self):
         
-        print("Hello")
-        #for currentQTableWidgetRow in self.remotedir.selectionModel().selectedRows():
-        f = self.remotedir.item(0, 0).text()
-        #print(self.remotedir.selectionModel().selectedRows())
-        print(f)
-                
+        self.remotedir.cellDoubleClicked.connect(self.cell_was_clicked)      
+        
     
- 
+    def cell_was_clicked(self, row, column):
+        item = self.remotedir.item(row,column).text()
+        
+        if column ==0:
+            if item.find('.') != -1:  #If a full stop is found then it is a file
+                b = str(item).strip('\r')
+                self.downloadFile(b)
+                
+            else:
+                b = str(item).strip('\r')
+                self.openDir(b)
+                
+    def downloadFile(self, fileName):
+        self.ftpLogic.startPassiveDTPconnection()
+        self.ftpLogic.downloadFile(fileName)
+        
+                
+    def openDir(self,folderName):
+        self.ftpLogic.changeWD(folderName)
+        self.ftpLogic.startPassiveDTPconnection()
+        self.ftpLogic.getList()
+        self.getRemoteDirList()
+        self.generateRemoteTable()
+        
+    def homeDirButtonClicked(self):
+        
+        self.homedir.clicked.connect(self.toHomeDir)
+    
+        
+    def toHomeDir(self):
+        self.ftpLogic.changeWD('/')
+        self.ftpLogic.startPassiveDTPconnection()
+        self.ftpLogic.getList()
+        self.getRemoteDirList()
+        self.generateRemoteTable()
+        
+    
 class statusMessage:
      
     def __init__(self):
@@ -134,7 +177,7 @@ class statusMessage:
 st = statusMessage()
 
 class FTPclient:
-    def __init__(self):
+    def __init__(self, clientName):
 
         self.IPsocket = None
         self.DTPsocket = None
@@ -143,11 +186,13 @@ class FTPclient:
         self.loggedIn = False
         self.user = None
         self.remotedirList = []
+        self.clientName = clientName
         
     def initConnection(self, serverIPname, serverIPport):
 
         self.serverIPname = serverIPname
         self.serverIPport = serverIPport
+        #self.clientName = clientName
 
         self.IPsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -256,8 +301,38 @@ class FTPclient:
                 time.sleep(3)
                 return
 
-    def getList(self):
+    def startActiveConnection(self):
 
+        # Request for an active connection
+        self.clientSocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        self.clientSocket.bind((self.clientName,0))
+        self.clientSocket.listen(1)
+
+        ip, port = self.clientSocket.getsockname()
+         
+        # Ready the ip with respect to the RFC959 standard
+        ip = ip.split('.')
+        ip = ','.join(ip)
+
+        # Ready the Port with respect to the TFC959 standard
+        p1 = math.floor(port/256)
+        p2 = port%256
+    
+        print('Requested...\n IP: ' + ip + '\nPort: ' + str(port))
+        
+        cmd = 'PORT ' + ip + ',' + str(p1) + ',' + str(p2)
+        self.send(cmd)
+        self.printServerReply(self.getServerReply())
+        
+        # Start Connection
+        self.DTPsocket, addr = self.clientSocket.accept()
+        print('Connected to :' , addr)
+        self.dataConnectionAlive = True
+
+
+    def getList(self):
+        
+        self.remotedirList = []
         # Cant't get list if disconnected
         if self.dataConnectionAlive and self.alive:
 
@@ -307,9 +382,54 @@ class FTPclient:
                 outfile.write(data)
             outfile.close()
             print('Transfer Succesfull')
-            self.printServerReply(self.getServerReply())
             self.DTPsocket.close()
+            self.printServerReply(self.getServerReply())
             
+    
+    def uploadFile(self,filePath):
+
+        #Check if file path is valid
+        if os.path.exists(filePath):
+            # Get the file name
+            if '/' in filePath:
+                f_index = filePath.rindex('/')
+                fileName = filePath[f_index+1:]
+            else:
+                fileName = filePath
+
+            # Send Command
+            cmd = 'STOR ' + fileName
+            self.send(cmd)
+            self.printServerReply(self.getServerReply())
+        
+            # Continue if there are no errors reported
+            if not self.errorResp:
+                print('Uploading ' + fileName + ' to server...')
+
+                if self.mode == 'I':
+                    uFile = open(filePath, 'rb')
+                else:
+                    uFile = open(filePath, 'r')
+                
+                # Send packets of the file
+                data =  uFile.read(1024)
+
+                while data:
+
+                    if self.mode == 'I':
+                        self.DTPsocket.send(data)
+                    else:
+                        self.DTPsocket.send(data.encode())
+                    data = uFile.read(1024)
+
+                uFile.close()
+                print('Upload success')
+                self.DTPsocket.close()
+                self.printServerReply(self.getServerReply())
+                
+        else:
+            print('Error: invalid path!')
+            self.DTPsocket.close()
     def returnDirList(self):
         return self.remotedirList
     
@@ -323,9 +443,8 @@ class FTPclient:
             
 
 def Main():
+    clientName = 'localhost'
     import sys
-
-
     # Testing ftp servers
     """ Po = [21,12000,21,21,12005]
     S  = ['speedtest.tele2.net', 'localhost','test.rebex.net','dlptest.com','localhost']
@@ -337,29 +456,29 @@ def Main():
     serverName = S[server]
     userName =  U[server]
     password = Pa[server]
-    client = FTPclient(serverName,serclearverIP)
+    client = FTPclient(serverName,serverIP,clientName)
     client.initConnection()
     client.login(userName, password)
-    client.startPassiveDTPconnection()
     client.setMode('I')
+    client.startActiveConnection()
     client.getList()
     time.sleep(1)
     client.changeWD('HOME')
-    client.startPassiveDTPconnection()
+    client.startActiveConnection()
     client.getList()
+    """ 
+    """ time.sleep(1)
     client.startPassiveDTPconnection()
-    client.downloadFile('EIE.png')
-    client.login(userName, password) """
-# client.startPassiveDTPconnection()
-# client.getList()
-
-#serverPort = 12000
-
+    client.uploadFile('Downloads/bw.jpg')
+    time.sleep(1)
+    client.startPassiveDTPconnection()
+    client.getList() """
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     
+    clientName = 'localhost'
     status = statusMessage()
-    client = FTPclient()    
+    client = FTPclient(clientName)    
     
     prog = cleintInterface(MainWindow, client, status)
 
