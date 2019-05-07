@@ -1,3 +1,10 @@
+#***********************#
+#      Elias Sepuru     #
+#   Boikanyo Radiokana  #
+#        FTP Server     #
+#       07-May-2019     #
+#***********************#
+
 import socket
 import os
 import time
@@ -296,11 +303,7 @@ class serverThread(threading.Thread):
             if self.PASVmode:
                 self.DTPsocket, addr = self.serverSocket.accept()
                 print('connect: ', addr)
-            #else:
-                # self.DTPsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                # self.DTPsocket.connect((self.DTPaddr,self.DTPport))
-            #resp = ' 225 Data Connection open'
-            #self.sendReply(resp)
+                
         except socket.error:
             resp = '425 Cannot open Data Connection'
             self.sendReply(resp)
@@ -313,6 +316,7 @@ class serverThread(threading.Thread):
     
     def sendData(self, data):
 
+        # Mode of sending?
         if not self.islist and self.mode == 'I':
             self.DTPsocket.send((data))   
         else:
@@ -348,10 +352,12 @@ class serverThread(threading.Thread):
             self.notLoggedInMSG()
     
     def toList(self,l):
+
         st = os.stat(l)
         fullmode ='rwxrwxrwx'
         mode = ''
-
+        
+        # Prep the directory listing with regards to RFC959
         for i in range(9):
             mode+=((st.st_mode>>(8-i))&1) and fullmode[i] or '-'
         
@@ -360,27 +366,42 @@ class serverThread(threading.Thread):
         return d + mode+ '\t1 user'+'\t group \t\t' + str(st.st_size) + '\t' + fhist + '\t' + os.path.basename(l)
     
     def MKD(self,cmd):
-        dirName = os.path.join(self.cwd,cmd[4:-2])
-        os.mkdir(dirName)
-        resp = '257 Directory created.'
-        self.sendReply(resp)
 
-    def RMD(self,cmd):
-        dirName = os.path.join(self.cwd,cmd[4:-2])
-        if self.allowDelete:
-            os.rmdir(dirName)
-            resp = '250 Directory deleted.'
+        #Can't make new directory if not logged in
+        if self.isLoggedIn:
+            dirName = os.path.join(self.cwd,cmd[4:-2])
+            os.mkdir(dirName)
+            resp = '257 Directory created.'
             self.sendReply(resp)
         else:
-            resp = '450 Not allowed.'
-            self.sendReply(resp)
-    
-    def REST(self,cmd):
-        self.pos = int(cmd[5:-2])
-        self.rest = True
-        resp = '250 File position reseted.'
-        self.sendReply(resp)
+            self.notLoggedInMSG()
+
+    def RMD(self,cmd):
         
+        # Can't delete directory if not logged in
+        if self.isLoggedIn:
+            
+            dirName = os.path.join(self.cwd,cmd[4:-2])
+
+            # Check if specified path exists
+
+            if os.path.exists(dirName):
+
+                # Allow deletion if only deletion is allowed
+                if self.allowDelete:
+                    os.rmdir(dirName)
+                    resp = '250 Directory deleted.'
+                    self.sendReply(resp)
+                else:
+                    resp = '450 Not allowed.'
+                    self.sendReply(resp)
+            else:
+                resp = '550 The system cannot find the file specified.'
+                self.sendReply(resp)
+        else:
+            self.notLoggedInMSG()
+
+      
     def STOR(self,cmd):
 
         # Cant store files if not logged in
@@ -447,12 +468,7 @@ class serverThread(threading.Thread):
                 resp = '150 Opening file data connection.'
                 self.sendReply(resp)
 
-                if self.rest:
-                    rFile.seek(self.pos)
-                    self.rest = False
-        
                 data = rFile.read(8192)
-
                 self.startDTPsocket()
                 # Send the file
                 while data:
@@ -471,6 +487,9 @@ class serverThread(threading.Thread):
 
         
 class FTPserver(threading.Thread):
+
+    # The lookout class, waits for contact from client
+
     def __init__(self,usersDB,homeDir,IP,Port):
         self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.serverIP = IP
@@ -494,12 +513,21 @@ class FTPserver(threading.Thread):
 def Main():
     
     serverPort = 12000
-    serverIP = 'localhost'  
+    serverIP =  socket.gethostbyname(socket.gethostname())
+    # Database for users
+    
     users = './users.txt'
+
+    # Default directory
     homeDir = '.'
+
+    # Make new thread for each new connection
+
     cThread = FTPserver(users,homeDir,serverIP,serverPort)
     cThread.daemon = True
     cThread.start()
+
+    # Wait for contact
     print('On', serverIP, ':', serverPort)
     input('Enter to end...\n')
     cThread.stop()

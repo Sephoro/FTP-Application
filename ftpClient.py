@@ -28,6 +28,7 @@ class FTPclient:
        
         self.IPsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+        # Try to connect to server
         try:
 
             self.IPsocket.connect((self.serverIPname, self.serverIPport))
@@ -67,7 +68,7 @@ class FTPclient:
                 
 
     def send(self, cmd):
-
+        # Sending commands to server
         self.IPsocket.send((cmd + '\r\n').encode())
         print('Client: ', cmd)
         self.collectMSG.append(cmd)
@@ -89,7 +90,8 @@ class FTPclient:
         print('Server :', resp)
     
     def setMode(self, mode):
-
+        
+        # Set mode of data transfer
         if mode.upper() == 'I' or mode.upper() == 'A':
             self.mode = mode
             cmd = 'TYPE '  + mode
@@ -192,24 +194,28 @@ class FTPclient:
             self.printServerReply(self.getServerReply())
     
     def downloadFile(self,fileName):
-
-        downloadFolder = 'Downloads'
+        
+        # Send download command
         cmd = 'RETR ' +  fileName
         self.send(cmd)
         self.printServerReply(self.getServerReply())
         
         # Dont continue if there is an error 
         if not self.errorResp:
+            
+            # Create Downloads folder if not exist
 
-            # Create Downloads folder
+            downloadFolder = 'Downloads'
             if not os.path.exists(downloadFolder):
                 os.makedirs(downloadFolder)
             
+            # Mode of data transfer
             if self.mode == 'I':
                 outfile = open(downloadFolder + '/' + fileName, 'wb')
             else:
                 outfile = open(downloadFolder + '/' + fileName, 'w')
             
+            # Get them packets :D
             print('Receiving data...')
             while True:
                 data = self.DTPsocket.recv(8192)
@@ -217,6 +223,7 @@ class FTPclient:
                     break
                 outfile.write(data)
             outfile.close()
+            # Done
             print('Transfer Succesfull')
             self.DTPsocket.close()
             self.printServerReply(self.getServerReply())
@@ -270,12 +277,25 @@ class FTPclient:
     def returnDirList(self):
         return self.remotedirList
     
-    def changeWD(self,dir):
-        
-        cmd = 'CWD ' + dir
+    def changeWD(self,dir_):
+
+        # Change working directory
+        cmd = 'CWD ' + dir_
         self.send(cmd)
         self.printServerReply(self.getServerReply())
+    
+    def makeDir(self,folderName):
+        # Create a new directory on server
+        cmd = 'MKD ' + folderName
+        self.send(cmd)
+        self.printServerReply(self.getServerReply())
+    
+    def remDir(self,folderName):
 
+        # Delete directory on server
+        cmd = 'RMD ' + folderName
+        self.send(cmd)
+        self.printServerReply(self.getServerReply())
     def logout(self):
         
         cmd = 'QUIT'
@@ -289,3 +309,37 @@ class FTPclient:
         self.printServerReply(self.getServerReply())
         
 
+def Main():
+    
+    clientName = 'localhost'
+    # Testing ftp servers
+    Po = [21,12000,21,21,12005]
+    S  = ['speedtest.tele2.net', '127.0.1.1','test.rebex.net','dlptest.com','localhost']
+    U  = ['anonymous','Elias','demo','dlpuser@dlptest.com','tokelo']
+    Pa = ['anonymous','aswedeal', 'password','5p2tvn92R0di8FdiLCfzeeT0b','1234']
+
+    server = 1
+    serverIP = Po[server]
+    serverName = S[server]
+    userName =  U[server]
+    password = Pa[server]
+    client = FTPclient(serverName,serverIP,clientName)
+    client.initConnection()
+    client.login(userName, password)
+    client.setMode('I')
+    client.startActiveConnection()
+    client.getList()
+    time.sleep(1)
+    client.changeWD('HOME')
+    client.remDir('hello.c')
+    client.startActiveConnection()
+    client.getList()
+    """ time.sleep(1)
+    client.startPassiveDTPconnection()
+    client.uploadFile('Downloads/bw.jpg')
+    time.sleep(1)
+    client.startPassiveDTPconnection()
+    client.getList() """
+    
+    
+Main()
