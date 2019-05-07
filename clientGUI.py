@@ -12,7 +12,6 @@ class cleintInterface(Ui_MainWindow):
         Ui_MainWindow.__init__(self)
         self.setupUi(ftpClientUI)
         self.ftpLogic = ftpLogic
-        #self.statusMessage = statusMessage
         self.loginButton.clicked.connect(self.loginButtonClicked)
         self.numFiles = 0
         self.finerList = []
@@ -35,6 +34,7 @@ class cleintInterface(Ui_MainWindow):
         self.ftpLogic.login("Elias", "aswedeal")
         #self.ftpLogic.initConnection(self.hostname.text(), int(self.port.text()))
         #self.ftpLogic.login(self.username.text(), self.password.text())
+        self.generateLogTable()
         self.statusMSG()
         self.ftpLogic.setMode('I')
         self.localdir.setEnabled(True)       
@@ -46,15 +46,8 @@ class cleintInterface(Ui_MainWindow):
         self.numFiles = len(self.finerList)
         
         #--------------------Set the window for the remote directory----------------
-        self.remotedir.setRowCount(self.numFiles)
-        self.remotedir.setColumnCount(6)
-        self.remotedir.setColumnWidth(0, 230)
-        self.remotedir.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem("Filename"))
-        self.remotedir.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem("Last Modified"))
-        self.remotedir.setHorizontalHeaderItem(2, QtWidgets.QTableWidgetItem("Size"))
-        self.remotedir.setHorizontalHeaderItem(3, QtWidgets.QTableWidgetItem("Group"))
-        self.remotedir.setHorizontalHeaderItem(4, QtWidgets.QTableWidgetItem("User"))
-        self.remotedir.setHorizontalHeaderItem(5, QtWidgets.QTableWidgetItem("Permissions"))
+        self.remoteWindow()
+        self.logWindow()
         
         self.generateRemoteTable()
         # Check which file is selected on the remoted directory window
@@ -66,14 +59,41 @@ class cleintInterface(Ui_MainWindow):
         self.homeDirButtonClicked()
         self.logoutButtonClicked()
     
+    def remoteWindow(self):
+        self.remotedir.setRowCount(self.numFiles)
+        self.remotedir.setColumnCount(6)
+        self.remotedir.setColumnWidth(0, 230)
+        self.remotedir.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem("Filename"))
+        self.remotedir.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem("Last Modified"))
+        self.remotedir.setHorizontalHeaderItem(2, QtWidgets.QTableWidgetItem("Size"))
+        self.remotedir.setHorizontalHeaderItem(3, QtWidgets.QTableWidgetItem("Group"))
+        self.remotedir.setHorizontalHeaderItem(4, QtWidgets.QTableWidgetItem("User"))
+        self.remotedir.setHorizontalHeaderItem(5, QtWidgets.QTableWidgetItem("Permissions"))
+          
+    def logWindow(self):
+        self.statusWindow.setColumnCount(1)
+        self.statusWindow.setColumnWidth(0, 820)
+        self.statusWindow.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem("Latest Session Log"))
+        
     def statusMSG(self):
         self.status.setText(self.ftpLogic.getStatus())
+    
+    def generateLogTable(self):
+        
+        self.statusWindow.setRowCount(len(self.ftpLogic.getComm()))
+        
+        for row in range(len(self.ftpLogic.getComm())):
+                # Place files on the GUI              
+                self.statusWindow.setItem(row,0, QtWidgets.QTableWidgetItem(self.ftpLogic.getComm()[len(self.ftpLogic.getComm())-row -1]))
+                
+        self.ftpLogic.clearComm()
                                
     def treeViewClientDirectoryClicked(self, signal):
         
         self.pathSelectedItem = self.localdir.model().filePath(signal)
         print(self.pathSelectedItem)
         self.statusMSG()
+        self.generateLogTable()
         
         
     # Display the file and folders and its characteristic in the remote directory window
@@ -135,13 +155,15 @@ class cleintInterface(Ui_MainWindow):
         
         self.ftpLogic.startPassiveDTPconnection()
         self.ftpLogic.uploadFile(filePath)
-        self.statusMSG() 
+        self.statusMSG()
+        self.generateLogTable() 
         
            
     def selectedFile(self):   
             
         self.remotedir.cellDoubleClicked.connect(self.cell_was_clicked)
-        self.statusMSG()   
+        self.statusMSG()
+        self.generateLogTable()   
         
     def cell_was_clicked(self, row, column):
         
@@ -162,6 +184,7 @@ class cleintInterface(Ui_MainWindow):
         self.ftpLogic.startPassiveDTPconnection()
         self.ftpLogic.downloadFile(fileName)
         self.statusMSG()
+        self.generateLogTable()
         
     # open a folder and show its contents  on the GUI            
     def openDir(self,folderName):
@@ -172,11 +195,13 @@ class cleintInterface(Ui_MainWindow):
         self.getRemoteDirList()
         self.generateRemoteTable()
         self.statusMSG()
+        self.generateLogTable()
         
     def homeDirButtonClicked(self):
         
         self.homedir.clicked.connect(self.toHomeDir)
         self.statusMSG()
+        self.generateLogTable()
     
     # Return to the home directory on remote host   
     def toHomeDir(self):
@@ -186,6 +211,8 @@ class cleintInterface(Ui_MainWindow):
         self.ftpLogic.getList()
         self.getRemoteDirList()
         self.generateRemoteTable()
+        self.statusMSG()
+        self.generateLogTable()
     
     def logoutButtonClicked(self):
 
@@ -196,6 +223,7 @@ class cleintInterface(Ui_MainWindow):
         self.ftpLogic.logout()
         self.ftpLogic.logout()
         self.statusMSG()
+        self.generateLogTable()
     
     def noopButtonClicked(self):
         
@@ -205,6 +233,7 @@ class cleintInterface(Ui_MainWindow):
         
         self.ftpLogic.checkConnection()
         self.statusMSG()
+        self.generateLogTable()
 
 
 def Main():

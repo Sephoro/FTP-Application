@@ -76,8 +76,10 @@ class FTPclient:
     def send(self, cmd):
         # Sending commands to server
         self.IPsocket.send((cmd + '\r\n').encode())
-        print('Client: ', cmd)
-        self.collectMSG.append('Client: ' + cmd)
+        # Dont print or log the password
+        if cmd[:4] != 'PASS':
+            print('Client: ', cmd)
+            self.collectMSG.append('Client: ' + cmd)
 
     def getServerReply(self):
 
@@ -111,6 +113,9 @@ class FTPclient:
     
     def getComm(self):
         return self.collectMSG
+    
+    def clearComm(self):
+        self.collectMSG.clear()
 
 
     def startPassiveDTPconnection(self):
