@@ -292,7 +292,7 @@ class serverThread(threading.Thread):
         if not self.islist and self.mode == 'I':
             self.DTPsocket.send((data))   
         else:
-            self.DTPsocket.send((data+'\r').encode())
+            self.DTPsocket.send((data+'\r\n').encode())
 
     def LIST(self,cmd):
 

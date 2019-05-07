@@ -17,6 +17,8 @@ class cleintInterface(Ui_MainWindow):
         self.ftpLogic = ftpLogic
         self.statusMessage = statusMessage
         self.loginButton.clicked.connect(self.loginButtonClicked)
+        self.numFiles = 0
+        self.finerList = []
         
         # ------------- Set up tree model for the local host --------------------
       
@@ -30,24 +32,69 @@ class cleintInterface(Ui_MainWindow):
         # ----------------- End Tree View -----------------------------
 
     def loginButtonClicked(self):
-        self.ftpLogic.initConnection(self.hostname.text(), int(self.port.text()))
-        self.ftpLogic.login(self.username.text(), self.password.text())
+        self.ftpLogic.initConnection("localhost", int("12000"))
+        self.ftpLogic.login("Elias", "aswedeal")
+        """ self.ftpLogic.initConnection(self.hostname.text(), int(self.port.text()))
+        self.ftpLogic.login(self.username.text(), self.password.text()) """
         self.status.setText(st.getStatus())
         self.localdir.setEnabled(True)       
         self.ftpLogic.startPassiveDTPconnection()
         self.ftpLogic.getList()
         
-        self.remotedir.setRowCount(1)
-        self.remotedir.setColumnCount(4)
+        self.getRemoteDirList()
         
+        #set the number of rows according to the number of files
+        self.numFiles = len(self.finerList)
+        self.remotedir.setRowCount(self.numFiles)
+        self.remotedir.setColumnCount(6)
+        self.remotedir.setColumnWidth(0, 230)
+        
+        #set the headings of the remoted directory view
         self.remotedir.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem("Filename"))
-        self.remotedir.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem("Size"))
-        self.remotedir.setHorizontalHeaderItem(2, QtWidgets.QTableWidgetItem("Last Modified"))
-        self.remotedir.setHorizontalHeaderItem(3, QtWidgets.QTableWidgetItem("Permissions"))
+        self.remotedir.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem("Last Modified"))
+        self.remotedir.setHorizontalHeaderItem(2, QtWidgets.QTableWidgetItem("Size"))
+        self.remotedir.setHorizontalHeaderItem(3, QtWidgets.QTableWidgetItem("Group"))
+        self.remotedir.setHorizontalHeaderItem(4, QtWidgets.QTableWidgetItem("User"))
+        self.remotedir.setHorizontalHeaderItem(5, QtWidgets.QTableWidgetItem("Permissions"))
+         
+        #display the file and its characteristic in the remote directory view
+        
+        for row in range(self.numFiles):
+            
+            items = self.finerList[row]
+            items = items.replace('\t\t', '\t')
+            items = items.split("\t") 
+                    
+            for col in range(6):              
+                self.remotedir.setItem(row,col, QtWidgets.QTableWidgetItem(items[5-col]))
+                
         
     def treeViewClientDirectoryClicked(self, signal):
         self.pathSelectedItem = self.localdir.model().filePath(signal)
         print(self.pathSelectedItem)
+        
+        
+    def getRemoteDirList(self):
+        self.dirList = self.ftpLogic.returnDirList()
+        
+        for element in self.dirList:
+            
+            temp = element.split("\n")
+                   
+            if(len(temp) == 2):
+                self.finerList.append(temp[0])
+            elif(len(temp)> 2):
+                s = len(temp) - 1
+                
+                for i in range(s):
+                    self.finerList.append(temp[i])
+        counter = 0
+        #Display all files in the console
+        """ for e in self.finerList:    
+            print(counter)   
+            print(e, " \n")
+            counter = counter + 1 """
+             
  
  
 class statusMessage:
@@ -72,6 +119,7 @@ class FTPclient:
         self.alive = False
         self.loggedIn = False
         self.user = None
+        self.remotedirList = []
         
     def initConnection(self, serverIPname, serverIPport):
 
@@ -199,12 +247,14 @@ class FTPclient:
             while True:
                 # Get the directory list
                 data = self.DTPsocket.recv(1024)
-                print(data.decode())
+                #print(data.decode())
+                self.remotedirList.append(data.decode())
 
                 if not data:
                     break
 
             print('Downloading done\n')
+            #print(self.remotedirList)
             self.DTPsocket.close()
             self.printServerReply(self.getServerReply())
     
@@ -237,6 +287,9 @@ class FTPclient:
             print('Transfer Succesfull')
             self.printServerReply(self.getServerReply())
             self.DTPsocket.close()
+            
+    def returnDirList(self):
+        return self.remotedirList
     
     def changeWD(self,dir):
         
@@ -262,7 +315,7 @@ def Main():
     serverName = S[server]
     userName =  U[server]
     password = Pa[server]
-    client = FTPclient(serverName,serverIP)
+    client = FTPclient(serverName,serclearverIP)
     client.initConnection()
     client.login(userName, password)
     client.startPassiveDTPconnection()
