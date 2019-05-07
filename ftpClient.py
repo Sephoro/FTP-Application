@@ -7,7 +7,7 @@ import time
 import os
 
 class FTPclient:
-    def __init__(self, serverIPname, serverIPport):
+    def __init__(self, serverIPname, serverIPport,clientName):
 
         self.IPsocket = None
         self.DTPsocket = None
@@ -17,6 +17,7 @@ class FTPclient:
         self.user = None
         self.serverIPname = serverIPname
         self.serverIPport = serverIPport
+        self.clientName = clientName
         
     def initConnection(self):
 
@@ -120,7 +121,36 @@ class FTPclient:
                 self.dataConnectionAlive = False
                 time.sleep(3)
                 return
+
+    def startActiveConnection(self):
+
+        # Request for an active connection
+        self.clientSocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        self.clientSocket.bind((self.clientName,0))
+        self.clientSocket.listen(1)
+
+        ip, port = self.clientSocket.getsockname()
+         
+        # Ready the ip with respect to the RFC959 standard
+        ip = ip.split('.')
+        ip = ','.join(ip)
+
+        # Ready the Port with respect to the TFC959 standard
+        p1 = math.floor(port/256)
+        p2 = port%256
     
+        print('Requested...\n IP: ' + ip + '\nPort: ' + str(port))
+        
+        cmd = 'PORT ' + ip + ',' + str(p1) + ',' + str(p2)
+        self.send(cmd)
+        self.printServerReply(self.getServerReply())
+        
+        # Start Connection
+        self.DTPsocket, addr = self.clientSocket.accept()
+        print('Connected to :' , addr)
+        self.dataConnectionAlive = True
+
+
     def getList(self):
          
         # Cant't get list if disconnected
@@ -232,6 +262,7 @@ class FTPclient:
 
 def Main():
     
+    clientName = 'localhost'
     # Testing ftp servers
     Po = [21,12000,21,21,12005]
     S  = ['speedtest.tele2.net', 'localhost','test.rebex.net','dlptest.com','localhost']
@@ -243,22 +274,22 @@ def Main():
     serverName = S[server]
     userName =  U[server]
     password = Pa[server]
-    client = FTPclient(serverName,serverIP)
+    client = FTPclient(serverName,serverIP,clientName)
     client.initConnection()
     client.login(userName, password)
-    client.startPassiveDTPconnection()
     client.setMode('I')
+    client.startActiveConnection()
     client.getList()
     time.sleep(1)
     client.changeWD('HOME')
-    client.startPassiveDTPconnection()
+    client.startActiveConnection()
     client.getList()
-    time.sleep(1)
+    """ time.sleep(1)
     client.startPassiveDTPconnection()
     client.uploadFile('Downloads/bw.jpg')
     time.sleep(1)
     client.startPassiveDTPconnection()
-    client.getList()
+    client.getList() """
     
     
 Main()

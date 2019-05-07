@@ -134,11 +134,32 @@ class serverThread(threading.Thread):
         
 
     def STRU(self,cmd):
-        #TODO
-        resp = '200 F.'
+         # Obsolete command
+        stru = cmd[5]
+
+        if stru == 'F':
+            resp = '200 F.'
+        else:
+            resp = '504 Command obsolete'
+
         self.sendReply(resp)
+
+    def MODE(self,cmd):
+        
+        # Obsolete command
+        mode = cmd[5]
+
+        if mode == 'S':
+            resp = '200 MODE set to stream.'
+        else:
+            resp = '504 Command obsolete'
+
+        self.sendReply(resp)
+
        
     def NOOP(self,cmd):
+
+        # To check if the connection is alive
         resp = '200 OK.'
         self.sendReply(resp)
     
@@ -256,10 +277,14 @@ class serverThread(threading.Thread):
             # Generate the PORT from the connection settings
             # This is with respect to RFC959
             self.DTPport = ((int(conSettings[4])<<8)) + int(conSettings[5])
-        
+            
+            print('Connected to :', self.DTPaddr, self.DTPport)
             # Acknowledge
             resp = '200 Got it.'
             self.sendReply(resp)
+
+            self.DTPsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.DTPsocket.connect((self.DTPaddr,self.DTPport))
 
         else:
             self.notLoggedInMSG()
@@ -270,9 +295,9 @@ class serverThread(threading.Thread):
             if self.PASVmode:
                 self.DTPsocket, addr = self.serverSocket.accept()
                 print('connect: ', addr)
-            else:
-                self.DTPsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.DTPsocket.connect((self.DTPaddr,self.DTPport))
+            #else:
+                # self.DTPsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                # self.DTPsocket.connect((self.DTPaddr,self.DTPport))
             #resp = ' 225 Data Connection open'
             #self.sendReply(resp)
         except socket.error:
@@ -468,7 +493,7 @@ class FTPserver(threading.Thread):
 def Main():
     
     serverPort = 12000
-    serverIP = 'localhost'#'10.201.6.13' #'localhost' #socket.gethostbyname(socket.gethostname())
+    serverIP = '10.196.6.43' #localhost'#'10.201.6.13' #'localhost' #socket.gethostbyname(socket.gethostname())
     
     
     users = './users.txt'
