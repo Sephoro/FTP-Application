@@ -3,6 +3,7 @@ from clientInterface import Ui_MainWindow
 from ftpClient import  FTPclient
 import sys
 import os
+import socket
 
 class cleintInterface(Ui_MainWindow):
 
@@ -30,15 +31,15 @@ class cleintInterface(Ui_MainWindow):
 
     def loginButtonClicked(self):
         
-        self.ftpLogic.initConnection("localhost", int("12000"))
+        self.ftpLogic.initConnection("127.0.1.1", int("21"))
         self.ftpLogic.login("Elias", "aswedeal")
         #self.ftpLogic.initConnection(self.hostname.text(), int(self.port.text()))
         #self.ftpLogic.login(self.username.text(), self.password.text())
+        self.statusMSG()
         self.ftpLogic.setMode('I')
         self.localdir.setEnabled(True)       
         self.ftpLogic.startPassiveDTPconnection()
         self.ftpLogic.getList()
-        
         self.getRemoteDirList()
     
         # Set the number of rows according to the number of files
@@ -64,11 +65,15 @@ class cleintInterface(Ui_MainWindow):
         self.noopButtonClicked()
         self.homeDirButtonClicked()
         self.logoutButtonClicked()
-                       
+    
+    def statusMSG(self):
+        self.status.setText(self.ftpLogic.getStatus())
+                               
     def treeViewClientDirectoryClicked(self, signal):
         
         self.pathSelectedItem = self.localdir.model().filePath(signal)
         print(self.pathSelectedItem)
+        self.statusMSG()
         
         
     # Display the file and folders and its characteristic in the remote directory window
@@ -114,8 +119,8 @@ class cleintInterface(Ui_MainWindow):
                
     def selectedLocalFile(self):
         
-         self.localdir.doubleClicked.connect(self.test)  
-       
+        self.localdir.doubleClicked.connect(self.test)
+        
         
     def test(self, signal):
         
@@ -130,11 +135,13 @@ class cleintInterface(Ui_MainWindow):
         
         self.ftpLogic.startPassiveDTPconnection()
         self.ftpLogic.uploadFile(filePath)
+        self.statusMSG() 
         
            
     def selectedFile(self):   
             
-        self.remotedir.cellDoubleClicked.connect(self.cell_was_clicked)   
+        self.remotedir.cellDoubleClicked.connect(self.cell_was_clicked)
+        self.statusMSG()   
         
     def cell_was_clicked(self, row, column):
         
@@ -154,6 +161,7 @@ class cleintInterface(Ui_MainWindow):
         
         self.ftpLogic.startPassiveDTPconnection()
         self.ftpLogic.downloadFile(fileName)
+        self.statusMSG()
         
     # open a folder and show its contents  on the GUI            
     def openDir(self,folderName):
@@ -163,10 +171,12 @@ class cleintInterface(Ui_MainWindow):
         self.ftpLogic.getList()
         self.getRemoteDirList()
         self.generateRemoteTable()
+        self.statusMSG()
         
     def homeDirButtonClicked(self):
         
         self.homedir.clicked.connect(self.toHomeDir)
+        self.statusMSG()
     
     # Return to the home directory on remote host   
     def toHomeDir(self):
@@ -178,32 +188,34 @@ class cleintInterface(Ui_MainWindow):
         self.generateRemoteTable()
     
     def logoutButtonClicked(self):
-        
+
         self.logoutButton.clicked.connect(self.Logout)
-        
+               
     def Logout(self):
         
         self.ftpLogic.logout()
         self.ftpLogic.logout()
+        self.statusMSG()
     
     def noopButtonClicked(self):
         
         self.noop.clicked.connect(self.nooP)
-        
+               
     def nooP(self):
         
         self.ftpLogic.checkConnection()
+        self.statusMSG()
 
 
 def Main():
-    clientName = 'localhost'
+    
+    clientName = socket.gethostbyname(socket.gethostname())
    
     # Testing ftp servers
     
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     
-    clientName = 'localhost'
     client = FTPclient(clientName)   
     
     application = cleintInterface(MainWindow, client)

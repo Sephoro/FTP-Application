@@ -512,7 +512,7 @@ class FTPserver(threading.Thread):
 
 def Main():
     
-    serverPort = 12000
+    serverPort = 21
     serverIP =  socket.gethostbyname(socket.gethostname())
     # Database for users
     
