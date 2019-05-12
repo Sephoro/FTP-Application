@@ -202,7 +202,8 @@ class FTPclient:
 
             while True:
                 # Get the directory list
-                data = self.DTPsocket.recv(8192)
+                data = self.DTPsocket.recv(1024)
+                print(data.decode())
                 self.remotedirList.append(data.decode())
 
                 if not data:

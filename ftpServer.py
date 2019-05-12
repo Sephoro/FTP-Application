@@ -29,7 +29,7 @@ class serverThread(threading.Thread):
         self.isConnected = True
         self.islist = False
         self.mode = 'I' #Default Mode
-        self.allowDelete = False
+        self.allowDelete = True
     
     def run(self):
 
