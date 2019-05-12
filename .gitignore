@@ -1,7 +1,11 @@
 #Ignoring Testing Folders and Files
 HOME
+Downloads
 *.pdf
 *.mp4
 *.png
 *.jpeg
 *.jpg
+*.hbs
+*.odt
+*.vscode

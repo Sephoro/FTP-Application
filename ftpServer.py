@@ -28,6 +28,7 @@ class serverThread(threading.Thread):
         self.validUser = False
         self.isConnected = True
         self.islist = False
+        self.mode = 'I' #Default Mode
         self.allowDelete = True
     
     def run(self):
@@ -319,7 +320,7 @@ class serverThread(threading.Thread):
         if not self.islist and self.mode == 'I':
             self.DTPsocket.send((data))   
         else:
-            self.DTPsocket.send((data+'\r').encode())
+            self.DTPsocket.send((data+'\r\n').encode())
 
     def LIST(self,cmd):
         
@@ -468,7 +469,6 @@ class serverThread(threading.Thread):
                 self.sendReply(resp)
 
                 data = rFile.read(8192)
-                
                 self.startDTPsocket()
                 # Send the file
                 while data:
@@ -512,10 +512,10 @@ class FTPserver(threading.Thread):
 
 def Main():
     
-    serverPort = 12000
+    serverPort = 21
     serverIP =  socket.gethostbyname(socket.gethostname())
-    
     # Database for users
+    
     users = './users.txt'
 
     # Default directory
@@ -531,6 +531,5 @@ def Main():
     print('On', serverIP, ':', serverPort)
     input('Enter to end...\n')
     cThread.stop()
-
-
+    
 Main()

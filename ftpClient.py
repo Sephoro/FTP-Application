@@ -1,13 +1,15 @@
-#client.py
+# client.py
+# Authors - Boikanyo Radiokana (1386807)
+# Authors - Elias Sepuru (1427726) 
 
 import socket
 import math
 import sys
 import time
 import os
-
+        
 class FTPclient:
-    def __init__(self, serverIPname, serverIPport,clientName):
+    def __init__(self, clientName):
 
         self.IPsocket = None
         self.DTPsocket = None
@@ -15,39 +17,48 @@ class FTPclient:
         self.alive = False
         self.loggedIn = False
         self.user = None
-        self.serverIPname = serverIPname
-        self.serverIPport = serverIPport
+        self.remotedirList = []
+        self.collectMSG = []
+        self.statusMSG = ' '
         self.clientName = clientName
         
-    def initConnection(self):
-        
-        # Create the communication aka IP socket
-        self.IPsocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        
+    def initConnection(self, serverIPname, serverIPport):
+
+        self.serverIPname = serverIPname
+        self.serverIPport = serverIPport
+       
+        self.IPsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
         # Try to connect to server
         try:
 
-            self.IPsocket.connect((self.serverIPname,self.serverIPport))
-            print(self.IPsocket.recv(1024).decode())
-            
+            self.IPsocket.connect((self.serverIPname, self.serverIPport))
+            print(self.IPsocket.recv(8192).decode())
+
         except:
 
             errMSG = 'Failed to connect ' + self.serverIPname
+            self.statusMSG = errMSG
             print(errMSG)
             self.errorResp = True
             time.sleep(3)
             return
 
         self.alive = True
-        print('Connected to server :)')
-    
-    def login(self, userName, password):
         
+        print('Connected to Server ;)')
+    
+    def getStatus(self):
+        
+        return self.statusMSG
+
+    def login(self, userName, password):
+
         # enter username
         cmd = 'USER ' + userName
         self.send(cmd)
         self.printServerReply(self.getServerReply())
-        
+
         if not self.errorResp:
             # enter password
             cmd = 'PASS ' + password
@@ -57,26 +68,33 @@ class FTPclient:
             if not self.errorResp:
                 self.loggedIn = True
                 self.user = userName
-                print('Login Success\n')
-
+                msg =('Login Success\n')
+                print(msg)
+                self.statusMSG = msg
                 
+
     def send(self, cmd):
         # Sending commands to server
         self.IPsocket.send((cmd + '\r\n').encode())
-        print('Client: ', cmd)
+        # Dont print or log the password
+        if cmd[:4] != 'PASS':
+            print('Client: ', cmd)
+            self.collectMSG.append('Client: ' + cmd)
 
     def getServerReply(self):
-        
-        resp = self.IPsocket.recv(1024).decode()
-        
+
+        resp = self.IPsocket.recv(8192).decode()
+        self.collectMSG.append('Server: ' + resp)
+
         # Notify if this an error
         if resp[0] != '5' and resp[0] != '4':
             self.errorResp = False
         else:
             self.errorResp = True
         return resp
-    
-    def printServerReply(self,resp):
+
+    def printServerReply(self, resp):
+        
         print('Server :', resp)
     
     def setMode(self, mode):
@@ -89,38 +107,51 @@ class FTPclient:
             self.printServerReply(self.getServerReply())
 
         else:
-            print('Client : Error unknown mode')
+            msg = ('Client : Error unknown mode')
+            self.statusMSG = msg
+            print(msg)
+    
+    def getComm(self):
+        return self.collectMSG
+    
+    def clearComm(self):
+        self.collectMSG.clear()
 
 
     def startPassiveDTPconnection(self):
-        
-        #Ask for a passive connection
+
+        # Ask for a passive connection
         cmd = 'PASV'
         self.send(cmd)
         resp = self.getServerReply()
         self.printServerReply(resp)
 
         if not self.errorResp:
-            
+
             firstIndex = resp.find('(')
-            endIndex  = resp.find(')')
-            
+            endIndex = resp.find(')')
+
             # Obtain the server DTP address and Port
             addr = resp[firstIndex+1:endIndex].split(',')
             self.serverDTPname = '.'.join(addr[:-2])
-            self.serverDTPport = (int(addr[4])<<8) + int(addr[5])
-            print(self.serverDTPname,self.serverDTPport)
+            self.serverDTPport = (int(addr[4]) << 8) + int(addr[5])
+            print(self.serverDTPname, self.serverDTPport)
 
             try:
-                #Connect to the server DTP
-                self.DTPsocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-                self.DTPsocket.connect((self.serverDTPname,self.serverDTPport))
+                # Connect to the server DTP
+                self.DTPsocket = socket.socket(
+                    socket.AF_INET, socket.SOCK_STREAM)
+                self.DTPsocket.connect(
+                    (self.serverDTPname, self.serverDTPport))
+                self.statusMSG = 'Passive Connection Success, Ready to receive'
                 print('Passive Connection Success, Ready to receive\n')
+                
                 self.dataConnectionAlive = True
 
             except:
 
                 print('Failed to connect to ', self.serverDTPname)
+                self.statusMSG = 'Failed to connect to '+ self.serverDTPname
                 self.dataConnectionAlive = False
                 time.sleep(3)
                 return
@@ -143,6 +174,7 @@ class FTPclient:
         p2 = port%256
     
         print('Requested...\n IP: ' + ip + '\nPort: ' + str(port))
+        self.statusMSG = 'Requested... IP: ' + ip + 'Port: ' + str(port)
         
         cmd = 'PORT ' + ip + ',' + str(p1) + ',' + str(p2)
         self.send(cmd)
@@ -151,29 +183,34 @@ class FTPclient:
         # Start Connection
         self.DTPsocket, addr = self.clientSocket.accept()
         print('Connected to :' , addr)
+        self.statusMSG  = 'Connected to :' +  str(addr)
         self.dataConnectionAlive = True
 
 
     def getList(self):
-         
+        
+        self.remotedirList = []
         # Cant't get list if disconnected
         if self.dataConnectionAlive and self.alive:
 
             cmd = 'LIST'
             self.send(cmd)
             self.printServerReply(self.getServerReply())
-
-            print('\nReceiving Data\n')
+            
+            print('\nReceiving Data...\n')
+            self.statusMSG = 'Receiving Data...'
 
             while True:
                 # Get the directory list
                 data = self.DTPsocket.recv(1024)
                 print(data.decode())
+                self.remotedirList.append(data.decode())
 
                 if not data:
                     break
-           
-            print('Downloading done\n')
+
+            print('Directory Listing Done!\n')
+            self.statusMSG ='Directory Listing Done!'
             self.DTPsocket.close()
             self.printServerReply(self.getServerReply())
     
@@ -201,14 +238,17 @@ class FTPclient:
             
             # Get them packets :D
             print('Receiving data...')
+            self.statusMSG = 'Recieving data...'
+            
             while True:
-                data = self.DTPsocket.recv(1024)
+                data = self.DTPsocket.recv(8192)
                 if not data:
                     break
                 outfile.write(data)
             outfile.close()
             # Done
             print('Transfer Succesfull')
+            self.statusMSG = 'Transfer Successfull'
             self.DTPsocket.close()
             self.printServerReply(self.getServerReply())
             
@@ -232,6 +272,7 @@ class FTPclient:
             # Continue if there are no errors reported
             if not self.errorResp:
                 print('Uploading ' + fileName + ' to server...')
+                self.statusMSG = 'Uploading ' + fileName + ' to server...'
 
                 if self.mode == 'I':
                     uFile = open(filePath, 'rb')
@@ -239,7 +280,7 @@ class FTPclient:
                     uFile = open(filePath, 'r')
                 
                 # Send packets of the file
-                data =  uFile.read(1024)
+                data =  uFile.read(8192)
 
                 while data:
 
@@ -247,17 +288,22 @@ class FTPclient:
                         self.DTPsocket.send(data)
                     else:
                         self.DTPsocket.send(data.encode())
-                    data = uFile.read(1024)
+                    data = uFile.read(8192)
 
                 uFile.close()
                 print('Upload success')
+                self.statusMSG = ' Upload Success'
                 self.DTPsocket.close()
                 self.printServerReply(self.getServerReply())
                 
         else:
             print('Error: invalid path!')
+            self.statusMSG = 'Error: invalid path!'
             self.DTPsocket.close()
+            
+    def returnDirList(self):
 
+        return self.remotedirList
     
     def changeWD(self,dir_):
 
@@ -267,6 +313,7 @@ class FTPclient:
         self.printServerReply(self.getServerReply())
     
     def makeDir(self,folderName):
+        
         # Create a new directory on server
         cmd = 'MKD ' + folderName
         self.send(cmd)
@@ -278,38 +325,17 @@ class FTPclient:
         cmd = 'RMD ' + folderName
         self.send(cmd)
         self.printServerReply(self.getServerReply())
-
-def Main():
-    
-    clientName = 'localhost'
-    # Testing ftp servers
-    Po = [21,12000,21,21,12005]
-    S  = ['speedtest.tele2.net', '127.0.1.1','test.rebex.net','dlptest.com','localhost']
-    U  = ['anonymous','Elias','demo','dlpuser@dlptest.com','tokelo']
-    Pa = ['anonymous','aswedeal', 'password','5p2tvn92R0di8FdiLCfzeeT0b','1234']
-
-    server = 1
-    serverIP = Po[server]
-    serverName = S[server]
-    userName =  U[server]
-    password = Pa[server]
-    client = FTPclient(serverName,serverIP,clientName)
-    client.initConnection()
-    client.login(userName, password)
-    client.setMode('I')
-    client.startActiveConnection()
-    client.getList()
-    time.sleep(1)
-    client.changeWD('HOME')
-    client.remDir('hello.c')
-    client.startActiveConnection()
-    client.getList()
-    """ time.sleep(1)
-    client.startPassiveDTPconnection()
-    client.uploadFile('Downloads/bw.jpg')
-    time.sleep(1)
-    client.startPassiveDTPconnection()
-    client.getList() """
-    
-    
-Main()
+        
+    def logout(self):
+        
+        #Close connection
+        cmd = 'QUIT'
+        self.send(cmd)
+        self.printServerReply(self.getServerReply())
+        self.statusMSG = 'Logged out, Connection Closed'
+        
+    def checkConnection(self):
+        
+        cmd = 'NOOP'
+        self.send(cmd)
+        self.printServerReply(self.getServerReply())
