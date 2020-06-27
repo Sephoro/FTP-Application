@@ -181,10 +181,10 @@ class cleintInterface(Ui_MainWindow):
                
     def Logout(self):
         
+        self.getRemoteDirList()
         self.ftpLogic.logout()
         self.ftpLogic.logout()
         self.statusMSG()
-        self.generateLogTable()
     
     def noopButtonClicked(self):
         
