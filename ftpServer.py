@@ -513,13 +513,22 @@ class FTPserver(threading.Thread):
 def Main():
     
     serverPort = 21
-    serverIP =  socket.gethostbyname(socket.gethostname())
+
+    #! For some reason this now gives localhost only
+    #! serverIP =  socket.gethostbyname(socket.gethostname())
+
+    #* New method
+
+    server =  socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server.connect(("8.8.8.8", 80))
+
+    serverIP = server.getsockname()[0]
+
     # Database for users
-    
     users = './users.txt'
 
     # Default directory
-    homeDir = '.'
+    homeDir = '../'
 
     # Make new thread for each new connection
 
@@ -531,5 +540,6 @@ def Main():
     print('FTP-Application running on', serverIP, ':', serverPort)
     input('Enter to end...\n')
     cThread.stop()
+    
     
 Main()
