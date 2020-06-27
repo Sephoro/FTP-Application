@@ -1,9 +1,9 @@
 # FTP-Application
 A basic ftp application using python3 sockets for server and client
-###1. Pre-requisites:
+### 1. Pre-requisites:
   * [PyQt5](https://pypi.org/project/PyQt5/) - Used for the graphical user interface.
   * [Python3](https://realpython.com/installing-python/) obviously!
-###2. Installation
+### 2. Installation
 * Simple clone the repo 
    ```sh 
    $ git clone https://github.com/Sephoro/FTP-Application.git
@@ -13,8 +13,8 @@ A basic ftp application using python3 sockets for server and client
     $ cd FTP-Application
     ```
     to go into the application directory
-###3. Execution 
-#####3.1 Server Execution
+### 3. Execution 
+##### 3.1 Server Execution
 * Having gone through sections 1 and 2, on the very same command line, to start the server run the following command:
   ```sh
   $ sudo python3 ftpServer.py
@@ -28,7 +28,7 @@ A basic ftp application using python3 sockets for server and client
   ![image](.media/serve-output.png)
   * The numerals **`127.0.1.1`** is the server IP (Yours might be different) and the numeral **`21`** is the port number as previously mentioned.
   
-#####3.2 Client execution
+##### 3.2 Client execution
 
 * Having installed [PyQt5](https://pypi.org/project/PyQt5/), to run the client open another command line/terminal in the same directory as the server (**PS Don't stop the server!**)
 * Execute the following command:
