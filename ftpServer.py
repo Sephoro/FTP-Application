@@ -528,7 +528,7 @@ def Main():
     cThread.start()
 
     # Wait for contact
-    print('On', serverIP, ':', serverPort)
+    print('FTP-Application running on', serverIP, ':', serverPort)
     input('Enter to end...\n')
     cThread.stop()
     
